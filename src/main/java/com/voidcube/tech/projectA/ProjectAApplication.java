@@ -1,4 +1,4 @@
-package com.voidcube.tech.project_A;
+package com.voidcube.tech.projectA;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
