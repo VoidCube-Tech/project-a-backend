@@ -3,3 +3,7 @@ spring:
     active: dev
   application:
     name: project-A
+server:
+  servlet:
+    session:
+      timeout: 1h
