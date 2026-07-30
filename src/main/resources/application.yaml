@@ -7,3 +7,7 @@ server:
   servlet:
     session:
       timeout: 1h
+app:
+  mail:
+    from: no-reply@voidcube.tech
+    verification-subject: "Confirme seu e-mail - Project A"
