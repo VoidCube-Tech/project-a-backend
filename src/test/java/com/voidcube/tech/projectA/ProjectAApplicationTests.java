@@ -1,4 +1,4 @@
-package com.voidcube.tech.project_A;
+package com.voidcube.tech.projectA;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

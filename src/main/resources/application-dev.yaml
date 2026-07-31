@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/voidcube_dev
+    url: jdbc:postgresql://localhost:5433/voidcube_dev
     username: postgres
     password: password
   jpa:
@@ -16,6 +16,6 @@ spring:
     properties:
       mail:
         smtp:
-          auth:
+          auth: true
           starttls:
             enable: true

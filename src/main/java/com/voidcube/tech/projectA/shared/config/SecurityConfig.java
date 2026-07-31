@@ -25,7 +25,7 @@ public class SecurityConfig {
             .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
             .authorizeHttpRequests(auth -> auth 
-                .requestMatchers("api/v1/auth/**", "api/v1/public/**").permitAll()
+                .requestMatchers("/api/v1/auth/**", "/api/v1/public/**").permitAll()
                 .anyRequest().authenticated()
             );
         
