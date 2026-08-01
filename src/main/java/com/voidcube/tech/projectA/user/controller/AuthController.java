@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.voidcube.tech.projectA.shared.service.AuthService;
 import com.voidcube.tech.projectA.user.dto.LoginRequestDTO;
 import com.voidcube.tech.projectA.user.dto.RegisterRequesteDTO;
+import com.voidcube.tech.projectA.user.service.AuthService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

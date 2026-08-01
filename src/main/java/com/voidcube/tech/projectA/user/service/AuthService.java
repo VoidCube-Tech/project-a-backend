@@ -1,4 +1,4 @@
-package com.voidcube.tech.projectA.shared.service;
+package com.voidcube.tech.projectA.user.service;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -10,6 +10,7 @@ import com.voidcube.tech.projectA.shared.config.AppFrontendProperties;
 import com.voidcube.tech.projectA.shared.exception.EmailAlreadyExistsException;
 import com.voidcube.tech.projectA.shared.exception.InvalidTokenException;
 import com.voidcube.tech.projectA.shared.exception.TokenExpiredException;
+import com.voidcube.tech.projectA.shared.service.EmailService;
 import com.voidcube.tech.projectA.tenant.model.Tenant;
 import com.voidcube.tech.projectA.tenant.model.Tier;
 import com.voidcube.tech.projectA.tenant.repository.TenantRepositoy;
