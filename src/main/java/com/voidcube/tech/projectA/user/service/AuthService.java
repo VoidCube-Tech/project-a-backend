@@ -65,17 +65,20 @@ public class AuthService {
     @Transactional
     public void verifyEmail(String token) {
         VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
-            .orElseThrow(()-> new InvalidTokenException("Token inválido"));
+            .orElseThrow(()-> new InvalidTokenException("Token inválido ou expirado"));
+
+            User user = verificationToken.getUser();
+            
+            if(user.getEmailVerifiedAt() != null) {
+                return;
+            }
 
             if(verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
                 throw new TokenExpiredException("Token Expirado. Solicite um novo e-mail de verificação");
             }
             
-            User user = verificationToken.getUser();
             user.setEmailVerifiedAt(LocalDateTime.now());
             userRepository.save(user);
-
-            verificationTokenRepository.delete(verificationToken);
     }
 
 
