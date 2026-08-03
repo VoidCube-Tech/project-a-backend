@@ -37,8 +37,8 @@ public class User implements UserDetails {
     @Column(name = "email_verified_at")
     private LocalDateTime emailVerifiedAt;
 
-    @OneToOne
-    @JoinColumn(name = "tenant_id", nullable = false, unique = true)
+    @OneToOne(optional = true)
+    @JoinColumn(name = "tenant_id", nullable = true, unique = true)
     private Tenant tenant;
 
     @Override
