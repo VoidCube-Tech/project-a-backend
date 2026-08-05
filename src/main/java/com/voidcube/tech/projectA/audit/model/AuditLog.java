@@ -1,8 +1,9 @@
-package com.voidcube.tech.projectA.user.model;
+package com.voidcube.tech.projectA.audit.model;
 
 import java.time.LocalDateTime;
 
 import com.voidcube.tech.projectA.tenant.model.Tenant;
+import com.voidcube.tech.projectA.user.model.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

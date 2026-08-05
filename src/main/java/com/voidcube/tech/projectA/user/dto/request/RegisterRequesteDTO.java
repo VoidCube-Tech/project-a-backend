@@ -1,4 +1,4 @@
-package com.voidcube.tech.projectA.user.dto;
+package com.voidcube.tech.projectA.user.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

@@ -7,9 +7,9 @@ import org.springframework.stereotype.Service;
 
 import com.voidcube.tech.projectA.user.repository.UserRepository;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Service
 public class UserDetailsServiceImplements implements UserDetailsService {
     

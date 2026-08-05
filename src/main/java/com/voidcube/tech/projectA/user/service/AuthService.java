@@ -13,8 +13,8 @@ import com.voidcube.tech.projectA.shared.exception.TokenExpiredException;
 import com.voidcube.tech.projectA.shared.service.EmailService;
 import com.voidcube.tech.projectA.tenant.model.Tenant;
 import com.voidcube.tech.projectA.tenant.model.Tier;
-import com.voidcube.tech.projectA.tenant.repository.TenantRepositoy;
-import com.voidcube.tech.projectA.user.dto.RegisterRequesteDTO;
+import com.voidcube.tech.projectA.tenant.repository.TenantRepository;
+import com.voidcube.tech.projectA.user.dto.request.RegisterRequesteDTO;
 import com.voidcube.tech.projectA.user.model.Role;
 import com.voidcube.tech.projectA.user.model.User;
 import com.voidcube.tech.projectA.user.model.VerificationToken;
@@ -22,14 +22,14 @@ import com.voidcube.tech.projectA.user.repository.UserRepository;
 import com.voidcube.tech.projectA.user.repository.VerificationTokenRepository;
 
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class AuthService {
     
     private final UserRepository userRepository;
-    private final TenantRepositoy tenantRepositoy;
+    private final TenantRepository tenantRepositoy;
     private final VerificationTokenRepository verificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
