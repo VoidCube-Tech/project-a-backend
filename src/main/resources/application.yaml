@@ -1,12 +1,20 @@
 spring:
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
   application:
     name: project-A
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
 server:
   servlet:
     session:
       timeout: 1h
+
 app:
   mail:
     from: no-reply@voidcube.tech
