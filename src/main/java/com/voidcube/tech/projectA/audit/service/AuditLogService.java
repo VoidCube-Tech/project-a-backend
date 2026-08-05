@@ -3,19 +3,16 @@ package com.voidcube.tech.projectA.audit.service;
 import com.voidcube.tech.projectA.audit.dto.AuditLogResponse;
 import com.voidcube.tech.projectA.audit.model.AuditLog;
 import com.voidcube.tech.projectA.audit.repository.AuditLogRepository;
+import com.voidcube.tech.projectA.shared.security.AuthenticatedUserProvider;
 import com.voidcube.tech.projectA.tenant.model.Tenant;
 import com.voidcube.tech.projectA.tenant.repository.TenantRepository;
 import com.voidcube.tech.projectA.user.model.Role;
 import com.voidcube.tech.projectA.user.model.User;
-import com.voidcube.tech.projectA.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,17 +21,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
-    private final UserRepository userRepository;
     private final TenantRepository tenantRepository;
 
-   
+    private final AuthenticatedUserProvider
+            authenticatedUserProvider;
+
     @Transactional
     public void register(
             String action,
             String entityName,
             String entityId
     ) {
-        User authenticatedUser = getAuthenticatedUser();
+        User authenticatedUser =
+                authenticatedUserProvider
+                        .getAuthenticatedUser();
 
         saveAuditLog(
                 action,
@@ -45,7 +45,6 @@ public class AuditLogService {
         );
     }
 
-    
     @Transactional
     public void register(
             String action,
@@ -53,7 +52,9 @@ public class AuditLogService {
             String entityId,
             Long affectedTenantId
     ) {
-        User authenticatedUser = getAuthenticatedUser();
+        User authenticatedUser =
+                authenticatedUserProvider
+                        .getAuthenticatedUser();
 
         if (affectedTenantId == null) {
             throw new IllegalArgumentException(
@@ -82,7 +83,6 @@ public class AuditLogService {
         );
     }
 
-  
     @Transactional(readOnly = true)
     public Page<AuditLogResponse> findAll(
             Pageable pageable
@@ -90,31 +90,6 @@ public class AuditLogService {
         return auditLogRepository
                 .findAll(pageable)
                 .map(AuditLogResponse::from);
-    }
-
-    
-    private User getAuthenticatedUser() {
-        Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
-
-        if (authentication == null
-                || !authentication.isAuthenticated()
-                || authentication
-                    instanceof AnonymousAuthenticationToken) {
-            throw new AccessDeniedException(
-                    "Não existe usuário autenticado"
-            );
-        }
-
-        String authenticatedEmail = authentication.getName();
-
-        return userRepository
-                .findByEmail(authenticatedEmail)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Usuário autenticado não encontrado: "
-                                + authenticatedEmail
-                ));
     }
 
     private void validateTenantAccess(
