@@ -2,6 +2,8 @@ package com.voidcube.tech.projectA.product.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
@@ -10,6 +12,7 @@ import org.hibernate.type.SqlTypes;
 
 import com.voidcube.tech.projectA.tenant.model.Tenant;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,12 +23,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.AccessLevel;
 
 @Entity
 @Getter
@@ -36,6 +41,22 @@ import lombok.Setter;
 @SQLRestriction("deleted_at IS NULL")
 public class Product {
 
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    
+    @Setter(AccessLevel.NONE)
+    private List<ProductVariation> variations = new ArrayList<>();
+
+    public void addVariation(ProductVariation variation) {
+        variations.add(variation);
+        variation.setProduct(this);
+    }
+
+    public void removeVariation(ProductVariation variation) {
+        variations.remove(variation);
+        variation.setProduct(null);
+    }
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
