@@ -2,12 +2,11 @@ package com.voidcube.tech.projectA.audit.service;
 
 import com.voidcube.tech.projectA.audit.model.AuditLog;
 import com.voidcube.tech.projectA.audit.repository.AuditLogRepository;
+import com.voidcube.tech.projectA.shared.security.AuthenticatedUserProvider;
 import com.voidcube.tech.projectA.tenant.model.Tenant;
 import com.voidcube.tech.projectA.tenant.repository.TenantRepository;
 import com.voidcube.tech.projectA.user.model.Role;
 import com.voidcube.tech.projectA.user.model.User;
-import com.voidcube.tech.projectA.user.repository.UserRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -15,10 +14,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 
@@ -36,18 +31,13 @@ class AuditLogServiceTest {
     private AuditLogRepository auditLogRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private TenantRepository tenantRepository;
 
     @Mock
-    private TenantRepository tenantRepository;
+    private AuthenticatedUserProvider authenticatedUserProvider;
 
     @InjectMocks
     private AuditLogService auditLogService;
-
-    @AfterEach
-    void clearSecurityContext() {
-        SecurityContextHolder.clearContext();
-    }
 
     @Test
     void deveRegistrarAcaoDoAdminNoProprioTenant() {
@@ -60,10 +50,8 @@ class AuditLogServiceTest {
                 tenant
         );
 
-        authenticate(admin);
-
-        when(userRepository.findByEmail(admin.getEmail()))
-                .thenReturn(Optional.of(admin));
+        when(authenticatedUserProvider.getAuthenticatedUser())
+                .thenReturn(admin);
 
         auditLogService.register(
                 "CREATE",
@@ -116,11 +104,8 @@ class AuditLogServiceTest {
 
         Tenant affectedTenant = createTenant(20L);
 
-        authenticate(superAdmin);
-
-        when(userRepository.findByEmail(
-                superAdmin.getEmail()
-        )).thenReturn(Optional.of(superAdmin));
+        when(authenticatedUserProvider.getAuthenticatedUser())
+                .thenReturn(superAdmin);
 
         when(tenantRepository.findById(20L))
                 .thenReturn(Optional.of(affectedTenant));
@@ -163,10 +148,8 @@ class AuditLogServiceTest {
                 adminTenant
         );
 
-        authenticate(admin);
-
-        when(userRepository.findByEmail(admin.getEmail()))
-                .thenReturn(Optional.of(admin));
+        when(authenticatedUserProvider.getAuthenticatedUser())
+                .thenReturn(admin);
 
         when(tenantRepository.findById(20L))
                 .thenReturn(Optional.of(anotherTenant));
@@ -208,20 +191,5 @@ class AuditLogServiceTest {
         user.setTenant(tenant);
 
         return user;
-    }
-
-    private void authenticate(User user) {
-        Authentication authentication =
-                new UsernamePasswordAuthenticationToken(
-                        user.getEmail(),
-                        null,
-                        user.getAuthorities()
-                );
-
-        SecurityContext context =
-                SecurityContextHolder.createEmptyContext();
-
-        context.setAuthentication(authentication);
-        SecurityContextHolder.setContext(context);
     }
 }
