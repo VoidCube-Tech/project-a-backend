@@ -3,7 +3,10 @@ package com.voidcube.tech.projectA.product.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
@@ -22,6 +25,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
@@ -78,6 +83,13 @@ public class Product {
     @Setter(AccessLevel.NONE)
     private List<ProductVariation> variations = new ArrayList<>();
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "product_tag_association", joinColumns = @JoinColumn(name= "product_id"), inverseJoinColumns = @JoinColumn(name= "tag_id"))
+
+    @Setter(AccessLevel.NONE)
+    private Set<ProductTag> tags = new LinkedHashSet<>();
+
+
     public void addVariation(ProductVariation variation) {
         variations.add(variation);
         variation.setProduct(this);
@@ -119,6 +131,26 @@ public class Product {
         }
 
         images.forEach(image -> image.setMain(image == mainImage));
+    }
+
+    public void addTag(ProductTag tag) {
+        tags.add(tag);
+    }
+
+    public void removeTag(ProductTag tag) {
+        boolean removed = tags.remove(tag);
+
+        if(!removed) {
+            throw new IllegalArgumentException("A tag não está associada a este produto.");
+        }
+    }
+
+    public void replaceTags(Collection<ProductTag> newTags) {
+        tags.clear();
+
+        if(newTags != null) {
+            tags.addAll(newTags);
+        }
     }
 
   @PrePersist
