@@ -40,23 +40,6 @@ import lombok.AccessLevel;
 @SQLDelete(sql= "UPDATE product SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 public class Product {
-
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    
-    @Setter(AccessLevel.NONE)
-    private List<ProductVariation> variations = new ArrayList<>();
-
-    public void addVariation(ProductVariation variation) {
-        variations.add(variation);
-        variation.setProduct(this);
-    }
-
-    public void removeVariation(ProductVariation variation) {
-        variations.remove(variation);
-        variation.setProduct(null);
-    }
-    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -85,20 +68,107 @@ public class Product {
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
 
-    @PrePersist
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+
+    @Setter(AccessLevel.NONE)
+    private List<ProductImage> images = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    
+    @Setter(AccessLevel.NONE)
+    private List<ProductVariation> variations = new ArrayList<>();
+
+    public void addVariation(ProductVariation variation) {
+        variations.add(variation);
+        variation.setProduct(this);
+    }
+
+    public void removeVariation(ProductVariation variation) {
+        boolean removed = variations.remove(variation);
+        
+
+        if(!removed) {
+            throw new IllegalArgumentException("A variação não pertence a este produto");
+        }
+        variation.setProduct(null);
+    }
+
+    public void addImage(ProductImage image) {
+        images.add(image);
+        image.setProduct(this);
+    }
+
+    public void removeImage(ProductImage image) {
+        boolean removedMainImage = image.isMain();
+        boolean removed = images.remove(image);
+
+        if(!removed) {
+            throw new IllegalArgumentException("A imagem não pertence a este produto");
+        }
+
+        image.setProduct(null);
+
+        if(removedMainImage && !images.isEmpty()) {
+            images.getFirst().setMain(true);
+        }
+    }
+
+    public void defineMainImage(ProductImage mainImage) {
+        if(!images.contains(mainImage)) {
+            throw new IllegalArgumentException("A imagem não pertence a este produto");
+        }
+
+        images.forEach(image -> image.setMain(image == mainImage));
+    }
+
+  @PrePersist
     @PreUpdate
-
     protected void validateProduct() {
-        if(productType == ProductType.PHYSICAL && stockQuantity == null) {
-            throw new IllegalStateException("Produto físico precisa possuir quantidade em estoque. ");
+        validateStock();
+        validatePrice();
+        validateMainImage();
+    }
+
+    private void validateStock() {
+        if (productType == ProductType.PHYSICAL
+                && stockQuantity == null) {
+            throw new IllegalStateException(
+                    "Produto físico precisa possuir quantidade em estoque."
+            );
         }
 
-        if (stockQuantity != null && stockQuantity < 0 ) {
-            throw new IllegalStateException("A quantidade em estoque não pode ser negativo");
+        if (stockQuantity != null && stockQuantity < 0) {
+            throw new IllegalStateException(
+                    "A quantidade em estoque não pode ser negativa."
+            );
+        }
+    }
+
+    private void validatePrice() {
+        if (price != null && price.signum() < 0) {
+            throw new IllegalStateException(
+                    "O preço não pode ser negativo."
+            );
+        }
+    }
+
+    private void validateMainImage() {
+        if (images.isEmpty()) {
+            return;
         }
 
-        if(price != null && price.signum() < 0) {
-            throw new IllegalStateException("O preço não pode ser negativo");
+        long mainImageCount = images.stream()
+                .filter(image -> image.isMain())
+                .count();
+
+        if (mainImageCount > 1) {
+            throw new IllegalStateException(
+                    "O produto pode possuir somente uma imagem principal."
+            );
+        }
+
+        if (mainImageCount == 0) {
+            images.getFirst().setMain(true);
         }
     }
 }
