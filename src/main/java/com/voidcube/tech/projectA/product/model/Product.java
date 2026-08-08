@@ -153,6 +153,20 @@ public class Product {
         }
     }
 
+    public void replaceVariations(Collection<ProductVariation> newVariations) {
+        new ArrayList<>(variations).forEach(this::removeVariation);
+
+        if(newVariations != null) {
+            newVariations.forEach(this::addVariation);
+        }
+    }
+
+    public void markAsDeleted() {
+        if(deletedAt == null) {
+            deletedAt = LocalDateTime.now();
+        }
+    }
+
   @PrePersist
     @PreUpdate
     protected void validateProduct() {
