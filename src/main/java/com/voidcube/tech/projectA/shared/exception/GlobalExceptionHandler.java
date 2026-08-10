@@ -165,4 +165,19 @@ public class GlobalExceptionHandler {
                             + "permitido de 5 MB."
             );
 }
+
+    @ExceptionHandler(DomainUrlAlreadyException.class)
+    public ResponseEntity<String> handleDomainAlready(DomainUrlAlreadyException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+    }
+
+    @ExceptionHandler(LandingPageNotFoundException.class)
+    public ResponseEntity<String> handleLandingPageNotFound(LandingPageNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidPageException.class)
+    public ResponseEntity<String> handleInvalidLandingPage(InvalidPageException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    }
 }
