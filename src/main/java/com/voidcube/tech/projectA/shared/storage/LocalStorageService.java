@@ -27,8 +27,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
-public class LocalStorageService
-        implements ImageStorageService {
+public class LocalStorageService implements ImageStorageService {
 
     private static final long MAX_FILE_SIZE =
             5L * 1024 * 1024;
@@ -43,7 +42,8 @@ public class LocalStorageService
             ALLOWED_CONTENT_TYPES = Set.of(
                     "image/jpeg",
                     "image/jpg",
-                    "image/png"
+                    "image/png",
+                    "image/webp"
             );
 
     private final Path rootDirectory;
@@ -128,6 +128,25 @@ public class LocalStorageService
         }
     }
 
+    @Override
+    public void delete(String path) {
+        if(path == null || path.isBlank()) {
+                throw new IllegalArgumentException("O caminho da imagem não pode estar vazio");
+        }
+
+        Path resolvedPath = rootDirectory
+                .resolve(path)
+                .normalize();
+
+        ensureInsideRootDirectory(resolvedPath);
+
+        try{
+                Files.deleteIfExists(resolvedPath);
+        } catch (IOException exception) {
+                throw new IllegalArgumentException("Não foi possível remover a imagem: " + path, exception);
+        }
+    }
+
     private void initializeDirectory() {
         try {
             Files.createDirectories(rootDirectory);
@@ -163,7 +182,7 @@ public class LocalStorageService
                 )) {
             throw new IllegalArgumentException(
                     "Formato não permitido. "
-                            + "Utilize JPEG ou PNG"
+                            + "Utilize JPEG, PNG ou WEBP"
             );
         }
     }
@@ -228,9 +247,14 @@ public class LocalStorageService
                     );
                 }
 
-                String extension = format.equals("jpeg")
-                        ? "jpg"
-                        : "png";
+                String extension = switch (format) {
+                        case "jpeg" -> "jpg";
+                        case "png" -> "png";
+                        case "webp" -> "webp";
+                        default -> throw new IllegalArgumentException(
+                                "Formato de imagem não permitido"
+                        );
+                };
 
                 return new DecodedImage(
                         image,
@@ -261,6 +285,10 @@ public class LocalStorageService
             return "png";
         }
 
+        if(normalized.equals("webp")) {
+                return "webp";
+        }
+
         throw new IllegalArgumentException(
                 "Formato real da imagem não permitido"
         );
@@ -288,7 +316,12 @@ public class LocalStorageService
                         && normalizedContentType
                             .equals("image/png");
 
-        if (!validJpeg && !validPng) {
+        boolean validWebp = 
+                realFormat.equals("webp")
+                        && normalizedContentType
+                             .equals("image/webp");
+
+        if (!validJpeg && !validPng && !validWebp) {
             throw new IllegalArgumentException(
                     "O conteúdo do arquivo não corresponde "
                             + "ao tipo informado"
@@ -351,7 +384,12 @@ public class LocalStorageService
                 )
         );
 
-        int imageType = format.equals("png")
+        boolean supportsTransaparency =
+                format.equals("png")
+                        || format.equals("webp");
+
+
+        int imageType = supportsTransaparency
                 ? BufferedImage.TYPE_INT_ARGB
                 : BufferedImage.TYPE_INT_RGB;
 

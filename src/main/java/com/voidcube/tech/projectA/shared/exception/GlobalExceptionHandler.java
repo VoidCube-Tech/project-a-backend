@@ -9,6 +9,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.stream.Collectors;
 
@@ -122,4 +123,46 @@ public class GlobalExceptionHandler {
                                 + "e os tipos dos campos informados."
                 );
     }
+
+    @ExceptionHandler(InvalidImageException.class)
+    public ResponseEntity<String> handleInvalidImage(
+        InvalidImageException exception
+) {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(exception.getMessage());
+}
+
+     @ExceptionHandler(ImageStorageException.class)
+     public ResponseEntity<String> handleImageStorage(
+        ImageStorageException exception
+) {
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(
+                    "Não foi possível processar "
+                            + "o arquivo da imagem."
+            );
+}
+
+    @ExceptionHandler(ProductImageNotFoundException.class)
+    public ResponseEntity<String> handleProductImageNotFound(
+        ProductImageNotFoundException exception
+) {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(exception.getMessage());
+}
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<String> handleMaxUploadSize(
+        MaxUploadSizeExceededException exception
+) {
+        return ResponseEntity
+            .status(HttpStatus.CONTENT_TOO_LARGE)
+            .body(
+                    "A imagem ultrapassa o limite máximo "
+                            + "permitido de 5 MB."
+            );
+}
 }

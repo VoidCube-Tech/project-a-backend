@@ -26,6 +26,7 @@ dependencies {
 	implementation("org.flywaydb:flyway-database-postgresql")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-mail")
+	implementation("com.github.usefulness:webp-imageio:0.11.0")
 	compileOnly("org.projectlombok:lombok")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	annotationProcessor("org.projectlombok:lombok")

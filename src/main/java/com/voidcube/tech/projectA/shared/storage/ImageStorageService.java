@@ -9,4 +9,6 @@ public interface ImageStorageService {
     String save(MultipartFile file);
 
     Resource fetch(String path);
+
+    void delete(String path);
 }

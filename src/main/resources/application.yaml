@@ -19,3 +19,6 @@ app:
   mail:
     from: no-reply@voidcube.tech
     verification-subject: "Confirme seu e-mail - Project A"
+  storage:
+    images:
+      max-size-bytes: 5242880
