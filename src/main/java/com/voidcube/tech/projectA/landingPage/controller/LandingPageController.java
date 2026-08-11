@@ -1,12 +1,12 @@
 package com.voidcube.tech.projectA.landingPage.controller;
 
-import org.apache.catalina.connector.Response;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -56,5 +56,29 @@ public class LandingPageController {
         LandingPageResponseDTO responseDTO = landingPageService.update(id, requestDTO);
 
         return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
+    }
+
+    @PostMapping("/{pageId}/products/{productId}")
+    public ResponseEntity<Void> associateProduct(
+        @PathVariable Long pageId,
+        @PathVariable Long productId
+    ) {
+        boolean created = landingPageService.associateProduct(pageId, productId);
+
+        if (!created) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @DeleteMapping("/{pageId}/products/{productId}")
+    public ResponseEntity<Void> disassociateProduct(
+        @PathVariable Long pageId,
+        @PathVariable Long productId
+    ) {
+        landingPageService.disassociateProduct(pageId, productId);
+
+        return ResponseEntity.noContent().build();
     }
 }

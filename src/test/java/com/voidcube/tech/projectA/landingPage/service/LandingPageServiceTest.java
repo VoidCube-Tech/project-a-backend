@@ -5,7 +5,10 @@ import com.voidcube.tech.projectA.landingPage.dto.request.LandingPageRequestDTO;
 import com.voidcube.tech.projectA.landingPage.dto.response.LandingPageResponseDTO;
 import com.voidcube.tech.projectA.landingPage.model.LandingPage;
 import com.voidcube.tech.projectA.landingPage.repository.LandingPageRepository;
+import com.voidcube.tech.projectA.product.model.Product;
+import com.voidcube.tech.projectA.product.repository.ProductRepository;
 import com.voidcube.tech.projectA.shared.exception.LandingPageNotFoundException;
+import com.voidcube.tech.projectA.shared.exception.ProductNotFoundException;
 import com.voidcube.tech.projectA.shared.security.AuthenticatedUserProvider;
 import com.voidcube.tech.projectA.tenant.model.Tenant;
 import com.voidcube.tech.projectA.user.model.Role;
@@ -23,7 +26,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -34,6 +39,9 @@ class LandingPageServiceTest {
 
     @Mock
     private LandingPageRepository landingPageRepository;
+
+    @Mock
+    private ProductRepository productRepository;
 
     @Mock
     private AuthenticatedUserProvider authenticatedUserProvider;
@@ -168,6 +176,144 @@ class LandingPageServiceTest {
                         request
                 )
         );
+    }
+
+    @Test
+    void deveAssociarProdutoDoMesmoTenant() {
+        Tenant tenant = createTenant(10L);
+        LandingPage landingPage = createLandingPage(20L, tenant);
+        Product product = createProduct(30L, tenant);
+
+        when(authenticatedUserProvider.getAuthenticatedUser())
+                .thenReturn(createAdmin(tenant));
+        when(landingPageRepository.findByIdAndTenant_Id(20L, 10L))
+                .thenReturn(Optional.of(landingPage));
+        when(productRepository.findByIdAndTenant_Id(30L, 10L))
+                .thenReturn(Optional.of(product));
+
+        boolean associated = landingPageService.associateProduct(20L, 30L);
+
+        assertTrue(associated);
+        assertTrue(landingPage.getProducts().contains(product));
+        assertTrue(product.getLandingPages().contains(landingPage));
+
+        verify(landingPageRepository).saveAndFlush(landingPage);
+        verify(auditLogService).register(
+                "LANDING_PAGE_PRODUCT_ASSOCIATE",
+                "LandingPageProduct",
+                "20:30"
+        );
+    }
+
+    @Test
+    void naoDeveSalvarAssociacaoDuplicada() {
+        Tenant tenant = createTenant(10L);
+        LandingPage landingPage = createLandingPage(20L, tenant);
+        Product product = createProduct(30L, tenant);
+        landingPage.addProduct(product);
+
+        when(authenticatedUserProvider.getAuthenticatedUser())
+                .thenReturn(createAdmin(tenant));
+        when(landingPageRepository.findByIdAndTenant_Id(20L, 10L))
+                .thenReturn(Optional.of(landingPage));
+        when(productRepository.findByIdAndTenant_Id(30L, 10L))
+                .thenReturn(Optional.of(product));
+
+        boolean associated = landingPageService.associateProduct(20L, 30L);
+
+        assertFalse(associated);
+        verify(landingPageRepository, never())
+                .saveAndFlush(any(LandingPage.class));
+        verify(auditLogService, never()).register(any(), any(), any());
+    }
+
+    @Test
+    void deveDesassociarProdutoDoMesmoTenant() {
+        Tenant tenant = createTenant(10L);
+        LandingPage landingPage = createLandingPage(20L, tenant);
+        Product product = createProduct(30L, tenant);
+        landingPage.addProduct(product);
+
+        when(authenticatedUserProvider.getAuthenticatedUser())
+                .thenReturn(createAdmin(tenant));
+        when(landingPageRepository.findByIdAndTenant_Id(20L, 10L))
+                .thenReturn(Optional.of(landingPage));
+        when(productRepository.findByIdAndTenant_Id(30L, 10L))
+                .thenReturn(Optional.of(product));
+
+        boolean disassociated = landingPageService.disassociateProduct(20L, 30L);
+
+        assertTrue(disassociated);
+        assertFalse(landingPage.getProducts().contains(product));
+        assertFalse(product.getLandingPages().contains(landingPage));
+
+        verify(landingPageRepository).saveAndFlush(landingPage);
+        verify(auditLogService).register(
+                "LANDING_PAGE_PRODUCT_DISASSOCIATE",
+                "LandingPageProduct",
+                "20:30"
+        );
+    }
+
+    @Test
+    void naoDeveSalvarQuandoAssociacaoNaoExiste() {
+        Tenant tenant = createTenant(10L);
+        LandingPage landingPage = createLandingPage(20L, tenant);
+        Product product = createProduct(30L, tenant);
+
+        when(authenticatedUserProvider.getAuthenticatedUser())
+                .thenReturn(createAdmin(tenant));
+        when(landingPageRepository.findByIdAndTenant_Id(20L, 10L))
+                .thenReturn(Optional.of(landingPage));
+        when(productRepository.findByIdAndTenant_Id(30L, 10L))
+                .thenReturn(Optional.of(product));
+
+        boolean disassociated = landingPageService.disassociateProduct(20L, 30L);
+
+        assertFalse(disassociated);
+        verify(landingPageRepository, never())
+                .saveAndFlush(any(LandingPage.class));
+        verify(auditLogService, never()).register(any(), any(), any());
+    }
+
+    @Test
+    void deveOcultarProdutoDeOutroTenantComoNaoEncontrado() {
+        Tenant tenant = createTenant(10L);
+        LandingPage landingPage = createLandingPage(20L, tenant);
+
+        when(authenticatedUserProvider.getAuthenticatedUser())
+                .thenReturn(createAdmin(tenant));
+        when(landingPageRepository.findByIdAndTenant_Id(20L, 10L))
+                .thenReturn(Optional.of(landingPage));
+        when(productRepository.findByIdAndTenant_Id(30L, 10L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                ProductNotFoundException.class,
+                () -> landingPageService.associateProduct(20L, 30L)
+        );
+
+        verify(productRepository).findByIdAndTenant_Id(30L, 10L);
+        verify(productRepository, never()).findById(30L);
+        verify(landingPageRepository, never())
+                .saveAndFlush(any(LandingPage.class));
+        verify(auditLogService, never()).register(any(), any(), any());
+    }
+
+    private LandingPage createLandingPage(Long id, Tenant tenant) {
+        LandingPage landingPage = new LandingPage();
+        landingPage.setId(id);
+        landingPage.setTenant(tenant);
+
+        return landingPage;
+    }
+
+    private Product createProduct(Long id, Tenant tenant) {
+        Product product = new Product();
+        product.setId(id);
+        product.setTenant(tenant);
+
+        return product;
     }
 
     private Tenant createTenant(Long id) {

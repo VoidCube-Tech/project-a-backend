@@ -14,9 +14,12 @@ import com.voidcube.tech.projectA.landingPage.dto.request.LandingPageRequestDTO;
 import com.voidcube.tech.projectA.landingPage.dto.response.LandingPageResponseDTO;
 import com.voidcube.tech.projectA.landingPage.model.LandingPage;
 import com.voidcube.tech.projectA.landingPage.repository.LandingPageRepository;
+import com.voidcube.tech.projectA.product.model.Product;
+import com.voidcube.tech.projectA.product.repository.ProductRepository;
 import com.voidcube.tech.projectA.shared.exception.DomainUrlAlreadyException;
 import com.voidcube.tech.projectA.shared.exception.InvalidPageException;
 import com.voidcube.tech.projectA.shared.exception.LandingPageNotFoundException;
+import com.voidcube.tech.projectA.shared.exception.ProductNotFoundException;
 import com.voidcube.tech.projectA.shared.security.AuthenticatedUserProvider;
 import com.voidcube.tech.projectA.tenant.model.Tenant;
 import com.voidcube.tech.projectA.user.model.User;
@@ -30,6 +33,7 @@ public class LandingPageService {
     private final LandingPageRepository landingPageRepository;
     private final AuthenticatedUserProvider authenticatedUserProvider;
     private final AuditLogService auditLogService;
+    private final ProductRepository productRepository;
 
     @Transactional
     public LandingPageResponseDTO create(LandingPageRequestDTO request) {
@@ -138,6 +142,100 @@ public class LandingPageService {
         }
         return authenticatedUser.getTenant();
     }
-    
 
+    @Transactional
+    public boolean associateProduct(
+        Long pageId,
+        Long productId
+    ) {
+        Tenant tenant = getAuthenticatedTenant();
+
+        LandingPage landingPage = findLandingPage(
+            pageId,
+            tenant.getId()
+        );
+
+        Product product = findProduct(
+            productId,
+            tenant.getId()
+        );
+
+        boolean added = landingPage.addProduct(product);
+
+        if (!added) {
+            return false;
+        }
+
+        landingPageRepository.saveAndFlush(landingPage);
+
+        auditLogService.register(
+            "LANDING_PAGE_PRODUCT_ASSOCIATE",
+            "LandingPageProduct",
+            pageId + ":" + productId
+        );
+
+        return true;
+    }
+
+    @Transactional
+    public boolean disassociateProduct(
+        Long pageId,
+        Long productId
+    ) {
+        Tenant tenant = getAuthenticatedTenant();
+
+        LandingPage landingPage = findLandingPage(
+            pageId,
+            tenant.getId()
+        );
+
+        Product product = findProduct(
+            productId,
+            tenant.getId()
+        );
+
+        boolean removed = landingPage.removeProduct(product);
+
+        if (!removed) {
+            return false;
+        }
+
+        landingPageRepository.saveAndFlush(landingPage);
+
+        auditLogService.register(
+            "LANDING_PAGE_PRODUCT_DISASSOCIATE",
+            "LandingPageProduct",
+            pageId + ":" + productId
+        );
+
+        return true;
+    }
+
+    private LandingPage findLandingPage(
+        Long pageId,
+        Long tenantId
+    ) {
+        return landingPageRepository
+            .findByIdAndTenant_Id(
+                pageId,
+                tenantId
+            )
+            .orElseThrow(() ->
+                new LandingPageNotFoundException(pageId)
+            );
+    }
+
+    private Product findProduct(
+        Long productId,
+        Long tenantId
+    ) {
+        return productRepository
+            .findByIdAndTenant_Id(
+                productId,
+                tenantId
+            )
+            .orElseThrow(() ->
+                new ProductNotFoundException(productId)
+            );
+    }
 }

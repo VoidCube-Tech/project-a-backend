@@ -13,6 +13,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
+import com.voidcube.tech.projectA.landingPage.model.LandingPage;
 import com.voidcube.tech.projectA.tenant.model.Tenant;
 
 import jakarta.persistence.CascadeType;
@@ -88,6 +89,10 @@ public class Product {
 
     @Setter(AccessLevel.NONE)
     private Set<ProductTag> tags = new LinkedHashSet<>();
+
+    @ManyToMany(mappedBy = "products", fetch = FetchType.LAZY)
+    @Setter(AccessLevel.NONE)
+    private Set<LandingPage> landingPages = new LinkedHashSet<>();
 
 
     public void addVariation(ProductVariation variation) {
@@ -165,6 +170,14 @@ public class Product {
         if(deletedAt == null) {
             deletedAt = LocalDateTime.now();
         }
+    }
+
+    public void addLandingPageAssociation(LandingPage landingPage) {
+        landingPages.add(landingPage);
+    }
+
+    public void removeLandingPageAssociation(LandingPage landingPage) {
+        landingPages.remove(landingPage);
     }
 
   @PrePersist
