@@ -7,12 +7,14 @@ import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Getter
 @Setter
 @DiscriminatorValue("SCHEDULED")
+@NoArgsConstructor
 public class ScheduledPromotion extends Promotion {
     
     @Column(name = "start_date")
@@ -23,10 +25,6 @@ public class ScheduledPromotion extends Promotion {
 
     @Column(name = "scheduled_discount_value", precision = 5, scale = 2)
     private BigDecimal discountValue;
-
-    public ScheduledPromotion() {
-        super(PromotionType.SCHEDULED);
-    }
 
     @Override
     public BigDecimal calculatePriceWithDiscount(BigDecimal originalPrice) {

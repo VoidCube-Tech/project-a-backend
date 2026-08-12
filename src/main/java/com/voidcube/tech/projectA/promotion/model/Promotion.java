@@ -57,10 +57,6 @@ public abstract class Promotion {
 
     protected Promotion() {}
 
-    protected Promotion(PromotionType promotionType) {
-        this.promotionType = Objects.requireNonNull(promotionType, "O tipo da promoção é obrigatório");
-    }
-
     public abstract BigDecimal calculatePriceWithDiscount(BigDecimal originalPrice);
 
     protected BigDecimal validateOriginalPrice(BigDecimal originalPrice) {

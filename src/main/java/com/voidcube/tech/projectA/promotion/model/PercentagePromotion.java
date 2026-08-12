@@ -7,20 +7,18 @@ import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Getter
 @Setter
 @DiscriminatorValue("PERCENTAGE")
+@NoArgsConstructor
 public class PercentagePromotion extends Promotion {
     
     @Column(name = "discount_percentage", precision = 5, scale = 2)
     private BigDecimal discountPercentage;
-
-    public PercentagePromotion() {
-        super(PromotionType.PERCENTAGE);
-    }
 
     @Override
     public BigDecimal calculatePriceWithDiscount(BigDecimal originalPrice) {

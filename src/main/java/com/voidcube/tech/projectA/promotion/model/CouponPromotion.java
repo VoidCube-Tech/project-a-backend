@@ -6,12 +6,14 @@ import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @DiscriminatorValue("COUPON")
 @Getter
 @Setter
+@NoArgsConstructor
 public class CouponPromotion extends Promotion {
     
     @Column(name = "coupon_code", length = 100)
