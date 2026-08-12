@@ -1,0 +1,59 @@
+package com.voidcube.tech.projectA.promotion.model;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import lombok.Getter;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@DiscriminatorValue("SCHEDULED")
+public class ScheduledPromotion extends Promotion {
+    
+    @Column(name = "start_date")
+    private LocalDateTime startDate;
+
+    @Column(name = "end_date")
+    private LocalDateTime endDate;
+
+    @Column(name = "scheduled_discount_value", precision = 5, scale = 2)
+    private BigDecimal discountValue;
+
+    public ScheduledPromotion() {
+        super(PromotionType.SCHEDULED);
+    }
+
+    @Override
+    public BigDecimal calculatePriceWithDiscount(BigDecimal originalPrice) {
+        BigDecimal validPrice = validateOriginalPrice(originalPrice);
+
+        if(!isActive()) {
+            return validPrice;
+        }
+
+        if(startDate == null || endDate == null) {
+            throw new IllegalStateException("O período da promoção não foi configurado");
+        }
+
+        if(endDate.isBefore(startDate)) {
+            throw new IllegalStateException("A data final não pode ser anterior á inicial");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        boolean hasNotStarted = now.isBefore(startDate);
+
+        boolean hasEnded = now.isAfter(endDate);
+
+        if(hasNotStarted || hasEnded) {
+            return validPrice;
+        }
+
+        return applyFixedDiscount(validPrice, discountValue);
+    }
+}

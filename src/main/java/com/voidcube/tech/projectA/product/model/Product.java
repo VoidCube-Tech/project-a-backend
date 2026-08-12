@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -14,6 +15,7 @@ import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
 import com.voidcube.tech.projectA.landingPage.model.LandingPage;
+import com.voidcube.tech.projectA.promotion.model.Promotion;
 import com.voidcube.tech.projectA.tenant.model.Tenant;
 
 import jakarta.persistence.CascadeType;
@@ -95,6 +97,11 @@ public class Product {
     private Set<LandingPage> landingPages = new LinkedHashSet<>();
 
 
+    @Setter(AccessLevel.NONE)
+    @ManyToMany(mappedBy = "products", fetch = FetchType.LAZY)
+    private Set<Promotion> promotions = new HashSet<>();
+
+    
     public void addVariation(ProductVariation variation) {
         variations.add(variation);
         variation.setProduct(this);
