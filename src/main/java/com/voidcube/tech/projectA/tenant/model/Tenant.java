@@ -6,6 +6,8 @@ import lombok.Setter;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
+import com.voidcube.tech.projectA.plan.model.Plan;
+
 @Entity
 @Table(name = "tenant")
 @Getter
@@ -20,15 +22,17 @@ public class Tenant {
     @Column(name = "company_name", nullable = false)
     private String companyName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Tier tier;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "plan_id")
+    private Plan plan;
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+
 }

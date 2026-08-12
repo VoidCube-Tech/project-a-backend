@@ -79,7 +79,7 @@ public class LandingPageService {
 
         landingPage.setName(request.name().trim());
         landingPage.setDomainUrl(normalizedDomain);
-        landingPage.setWhatsappNumber(request.whatsappNumber());
+        landingPage.setWhatsappNumber(normalizeWhatsapp(request.whatsappNumber()));
 
         LandingPage savedLandingPage = saveLandingPage(landingPage);
 

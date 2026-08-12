@@ -6,13 +6,14 @@ import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.voidcube.tech.projectA.plan.model.Plan;
+import com.voidcube.tech.projectA.plan.repository.PlanRepository;
 import com.voidcube.tech.projectA.shared.config.AppFrontendProperties;
 import com.voidcube.tech.projectA.shared.exception.EmailAlreadyExistsException;
 import com.voidcube.tech.projectA.shared.exception.InvalidTokenException;
 import com.voidcube.tech.projectA.shared.exception.TokenExpiredException;
 import com.voidcube.tech.projectA.shared.service.EmailService;
 import com.voidcube.tech.projectA.tenant.model.Tenant;
-import com.voidcube.tech.projectA.tenant.model.Tier;
 import com.voidcube.tech.projectA.tenant.repository.TenantRepository;
 import com.voidcube.tech.projectA.user.dto.request.RegisterRequesteDTO;
 import com.voidcube.tech.projectA.user.model.Role;
@@ -34,6 +35,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final AppFrontendProperties frontendProperties;
+    private final PlanRepository planRepository;
 
     @Transactional
     public void register(RegisterRequesteDTO request) {
@@ -41,9 +43,12 @@ public class AuthService {
             throw new EmailAlreadyExistsException("Este e-mail já está cadastrado");
         }
 
+        Plan basicPlan = planRepository.findByName("Basic")
+            .orElseThrow(()-> new IllegalStateException("O plano padrão Basic não está cadastrado"));
+
         Tenant tenant = new Tenant();
         tenant.setCompanyName(request.companyName());
-        tenant.setTier(Tier.BASIC);
+        tenant.setPlan(basicPlan);
         tenantRepositoy.save(tenant);
 
         User user = new User();
