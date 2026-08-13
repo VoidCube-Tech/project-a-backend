@@ -32,8 +32,8 @@ public class PercentagePromotion extends Promotion {
             throw new IllegalStateException("A porcentagem de desconto não foi configurada");
         }
 
-        if(discountPercentage.signum() < 0 || discountPercentage.compareTo(new BigDecimal("100"))> 0) {
-            throw new IllegalStateException("Percentual deve estar entre 0 e 100");
+        if(discountPercentage.signum() <= 0 || discountPercentage.compareTo(new BigDecimal("100"))> 0) {
+            throw new IllegalStateException("Percentual deve estar entre 0.01 e 100");
         }
 
         BigDecimal percentageAsDecimal = discountPercentage.movePointLeft(2);

@@ -114,4 +114,36 @@ class PromotionCalculationTest {
                 )
         );
     }
+
+    @Test
+    void shouldRejectZeroPercentageDiscount() {
+        PercentagePromotion promotion = new PercentagePromotion();
+
+        promotion.setActive(true);
+        promotion.setDiscountPercentage(BigDecimal.ZERO);
+
+        assertThrows(
+            IllegalStateException.class,
+            () -> promotion.calculatePriceWithDiscount(
+                new BigDecimal("100.00")
+            )
+        );
+    }
+
+    @Test
+    void shouldRejectZeroFixedDiscount() {
+        CouponPromotion promotion = new CouponPromotion();
+
+        promotion.setActive(true);
+        promotion.setCouponCode("TESTE");
+        promotion.setUsageLimit(10);
+        promotion.setDiscountValue(BigDecimal.ZERO);
+
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> promotion.calculatePriceWithDiscount(
+                new BigDecimal("100.00")
+            )
+        );
+    }
 }

@@ -1,5 +1,8 @@
 package com.voidcube.tech.projectA.shared.exception;
 
+import com.voidcube.tech.projectA.promotion.exception.CouponCodeAlreadyExistsException;
+import com.voidcube.tech.projectA.promotion.exception.InvalidPromotionException;
+import com.voidcube.tech.projectA.promotion.exception.PromotionNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -88,6 +91,33 @@ public class GlobalExceptionHandler {
     ) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
+                .body(exception.getMessage());
+    }
+
+    @ExceptionHandler(InvalidPromotionException.class)
+    public ResponseEntity<String> handleInvalidPromotion(
+            InvalidPromotionException exception
+    ) {
+        return ResponseEntity
+                .badRequest()
+                .body(exception.getMessage());
+    }
+
+    @ExceptionHandler(PromotionNotFoundException.class)
+    public ResponseEntity<String> handlePromotionNotFound(
+            PromotionNotFoundException exception
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(exception.getMessage());
+    }
+
+    @ExceptionHandler(CouponCodeAlreadyExistsException.class)
+    public ResponseEntity<String> handleCouponConflict(
+            CouponCodeAlreadyExistsException exception
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
                 .body(exception.getMessage());
     }
 

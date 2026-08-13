@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import com.voidcube.tech.projectA.product.model.Product;
+import com.voidcube.tech.projectA.tenant.model.Tenant;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
@@ -22,6 +23,7 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -49,6 +51,10 @@ public abstract class Promotion {
     @Enumerated(EnumType.STRING)
     @Column(name = "promotion_type", nullable = false, insertable = false, updatable = false)
     private PromotionType promotionType;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
 
     @Setter(AccessLevel.NONE)
     @ManyToMany(fetch = FetchType.LAZY)
@@ -78,8 +84,8 @@ public abstract class Promotion {
             throw new IllegalArgumentException("Desconto não foi configurado/sem desconto");
         }
 
-        if(discountValue.signum() < 0) {
-            throw new IllegalArgumentException("Desconto não pode ser negativo");
+        if(discountValue.signum() <= 0) {
+            throw new IllegalArgumentException("Desconto deve ser maior que zero");
         }
 
         return validPrice
