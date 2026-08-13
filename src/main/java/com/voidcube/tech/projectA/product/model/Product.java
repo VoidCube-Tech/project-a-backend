@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.hibernate.annotations.JdbcTypeCode;
@@ -179,23 +180,72 @@ public class Product {
         }
     }
 
-    public void addLandingPageAssociation(LandingPage landingPage) {
-        landingPages.add(landingPage);
+    public boolean addLandingPageAssociation(
+        LandingPage landingPage
+) {
+        Objects.requireNonNull(
+            landingPage,
+            "A landing page não pode ser nula"
+    );
+
+        boolean added = landingPages.add(landingPage);
+
+        if (added) {
+        landingPage.getProducts().add(this);
     }
 
-    public void removeLandingPageAssociation(LandingPage landingPage) {
-        landingPages.remove(landingPage);
+        return added;
+}
+
+    public boolean removeLandingPageAssociation(
+        LandingPage landingPage
+) {
+        Objects.requireNonNull(
+            landingPage,
+            "A landing page não pode ser nula"
+    );
+
+        boolean removed = landingPages.remove(landingPage);
+
+        if (removed) {
+            landingPage.getProducts().remove(this);
     }
+
+    return removed;
+}
 
     public boolean isAvailable() {
-        if(productType == productType.DIGITAL) {
-            return true;
-        }
+        if (deletedAt != null || productType == null) {
+            return false;
+    }
 
-        return productType == productType.PHYSICAL
+        if (productType == ProductType.DIGITAL) {
+            return true;
+    }
+
+        return productType == ProductType.PHYSICAL
             && stockQuantity != null
             && stockQuantity > 0;
+}
+
+@Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
     }
+
+        if (!(other instanceof Product product)) {
+            return false;
+    }
+
+        return getId() != null
+            && getId().equals(product.getId());
+}
+
+    @Override
+    public int hashCode() {
+        return Product.class.hashCode();
+}
 
   @PrePersist
     @PreUpdate
