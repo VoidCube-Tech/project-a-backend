@@ -101,7 +101,7 @@ public class Product {
     @ManyToMany(mappedBy = "products", fetch = FetchType.LAZY)
     private Set<Promotion> promotions = new HashSet<>();
 
-    
+
     public void addVariation(ProductVariation variation) {
         variations.add(variation);
         variation.setProduct(this);
@@ -185,6 +185,16 @@ public class Product {
 
     public void removeLandingPageAssociation(LandingPage landingPage) {
         landingPages.remove(landingPage);
+    }
+
+    public boolean isAvailable() {
+        if(productType == productType.DIGITAL) {
+            return true;
+        }
+
+        return productType == productType.PHYSICAL
+            && stockQuantity != null
+            && stockQuantity > 0;
     }
 
   @PrePersist
