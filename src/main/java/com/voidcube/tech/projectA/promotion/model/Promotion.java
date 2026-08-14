@@ -62,6 +62,9 @@ public abstract class Promotion {
     private Set<Product> products = new LinkedHashSet<>();
 
     protected Promotion() {}
+    protected Promotion(PromotionType promotionType) {
+        this.promotionType = Objects.requireNonNull(promotionType, "O tipo da promoção é obrigátorio");
+    }
 
     public abstract BigDecimal calculatePriceWithDiscount(BigDecimal originalPrice);
 

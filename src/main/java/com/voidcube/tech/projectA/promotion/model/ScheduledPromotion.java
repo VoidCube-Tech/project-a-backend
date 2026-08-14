@@ -16,7 +16,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @DiscriminatorValue("SCHEDULED")
-@NoArgsConstructor
 public class ScheduledPromotion extends Promotion {
     
     @Column(name = "start_date")
@@ -71,5 +70,8 @@ public class ScheduledPromotion extends Promotion {
         }
 
         return applyFixedDiscount(validPrice, discountValue);
+    }
+    public ScheduledPromotion() {
+        super(PromotionType.SCHEDULED);
     }
 }
