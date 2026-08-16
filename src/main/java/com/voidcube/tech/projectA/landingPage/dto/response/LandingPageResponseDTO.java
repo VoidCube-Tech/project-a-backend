@@ -1,6 +1,6 @@
-package com.voidcube.tech.projectA.landingPage.dto.response;
+package com.voidcube.tech.projectA.landingpage.dto.response;
 
-import com.voidcube.tech.projectA.landingPage.model.LandingPage;
+import com.voidcube.tech.projectA.landingpage.model.LandingPage;
 
 public record LandingPageResponseDTO(
     Long id,

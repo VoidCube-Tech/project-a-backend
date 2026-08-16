@@ -33,9 +33,6 @@ public class PromotionPriceService {
             .orElse(originalPrice);
     }
 
-
-
-
     private boolean isAutomaticPromotion(Promotion promotion) {
         return promotion.getPromotionType() == PromotionType.PERCENTAGE || promotion.getPromotionType() == PromotionType.SCHEDULED;
     }

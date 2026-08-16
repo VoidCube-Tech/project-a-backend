@@ -1,4 +1,4 @@
-package com.voidcube.tech.projectA.landingPage.model;
+package com.voidcube.tech.projectA.landingpage.model;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

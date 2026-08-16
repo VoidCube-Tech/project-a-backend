@@ -1,4 +1,4 @@
-package com.voidcube.tech.projectA.landingPage.service;
+package com.voidcube.tech.projectA.landingpage.service;
 
 import java.util.Locale;
 
@@ -10,10 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.voidcube.tech.projectA.audit.service.AuditLogService;
-import com.voidcube.tech.projectA.landingPage.dto.request.LandingPageRequestDTO;
-import com.voidcube.tech.projectA.landingPage.dto.response.LandingPageResponseDTO;
-import com.voidcube.tech.projectA.landingPage.model.LandingPage;
-import com.voidcube.tech.projectA.landingPage.repository.LandingPageRepository;
+import com.voidcube.tech.projectA.landingpage.dto.request.LandingPageRequestDTO;
+import com.voidcube.tech.projectA.landingpage.dto.response.LandingPageResponseDTO;
+import com.voidcube.tech.projectA.landingpage.model.LandingPage;
+import com.voidcube.tech.projectA.landingpage.repository.LandingPageRepository;
 import com.voidcube.tech.projectA.product.model.Product;
 import com.voidcube.tech.projectA.product.repository.ProductRepository;
 import com.voidcube.tech.projectA.shared.exception.DomainUrlAlreadyException;

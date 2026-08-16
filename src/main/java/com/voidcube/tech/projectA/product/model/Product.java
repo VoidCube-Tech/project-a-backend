@@ -10,12 +10,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
-import com.voidcube.tech.projectA.landingPage.model.LandingPage;
+import com.voidcube.tech.projectA.landingpage.model.LandingPage;
 import com.voidcube.tech.projectA.promotion.model.Promotion;
 import com.voidcube.tech.projectA.tenant.model.Tenant;
 
@@ -77,6 +78,7 @@ public class Product {
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
 
+    @BatchSize(size = 50)
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 
     @Setter(AccessLevel.NONE)
@@ -87,6 +89,7 @@ public class Product {
     @Setter(AccessLevel.NONE)
     private List<ProductVariation> variations = new ArrayList<>();
 
+    @BatchSize(size = 50)
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "product_tag_association", joinColumns = @JoinColumn(name= "product_id"), inverseJoinColumns = @JoinColumn(name= "tag_id"))
 
@@ -98,6 +101,7 @@ public class Product {
     private Set<LandingPage> landingPages = new LinkedHashSet<>();
 
 
+    @BatchSize(size = 50)
     @Setter(AccessLevel.NONE)
     @ManyToMany(mappedBy = "products", fetch = FetchType.LAZY)
     private Set<Promotion> promotions = new HashSet<>();

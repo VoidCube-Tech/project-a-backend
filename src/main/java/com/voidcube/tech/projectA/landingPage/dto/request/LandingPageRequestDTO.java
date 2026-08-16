@@ -1,4 +1,4 @@
-package com.voidcube.tech.projectA.landingPage.dto.request;
+package com.voidcube.tech.projectA.landingpage.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

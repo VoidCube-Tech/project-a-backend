@@ -1,4 +1,4 @@
-package com.voidcube.tech.projectA.landingPage.controller;
+package com.voidcube.tech.projectA.landingpage.controller;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.voidcube.tech.projectA.landingPage.dto.request.LandingPageRequestDTO;
-import com.voidcube.tech.projectA.landingPage.dto.response.LandingPageResponseDTO;
-import com.voidcube.tech.projectA.landingPage.service.LandingPageService;
+import com.voidcube.tech.projectA.landingpage.dto.request.LandingPageRequestDTO;
+import com.voidcube.tech.projectA.landingpage.dto.response.LandingPageResponseDTO;
+import com.voidcube.tech.projectA.landingpage.service.LandingPageService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

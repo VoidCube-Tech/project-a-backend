@@ -1,6 +1,6 @@
-package com.voidcube.tech.projectA.landingPage.controller;
+package com.voidcube.tech.projectA.landingpage.controller;
 
-import com.voidcube.tech.projectA.landingPage.service.LandingPageService;
+import com.voidcube.tech.projectA.landingpage.service.LandingPageService;
 import com.voidcube.tech.projectA.shared.exception.GlobalExceptionHandler;
 import com.voidcube.tech.projectA.shared.exception.ProductNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
