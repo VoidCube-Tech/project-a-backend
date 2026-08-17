@@ -41,4 +41,27 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
             WHERE image.product.id = :productId
             """)
     int clearMainImage(@Param("productId") Long productId);
+
+    @Query("""
+                    SELECT image
+                    FROM ProductImage image
+                    JOIN FETCH image.product product
+                    WHERE image.id = :imageId
+                    AND product.id = :productId
+                    AND product.tenant.id = :tenantId
+                    """)
+        Optional<ProductImage> findAdminFile(
+                @Param("imageId") Long imageId,
+                @Param("productId") Long productId,
+                @Param("tenantId") Long tenantId
+        );
+
+        @Query("""
+                     SELECT DISTINCT image
+                     FROM ProductImage image
+                     JOIN FETCH image.product product
+                     JOIN product.landingPages landingPage
+                     WHERE image.id = :imageId
+                        """)
+        Optional<ProductImage> findPublishedFile(@Param("imageId") Long imageId);
 }

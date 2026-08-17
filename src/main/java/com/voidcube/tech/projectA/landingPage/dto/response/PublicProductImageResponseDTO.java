@@ -4,10 +4,12 @@ import com.voidcube.tech.projectA.product.model.ProductImage;
 
 public record PublicProductImageResponseDTO(
     String imageUrl,
-    boolean main
+    boolean isMain
 ) {
-    
+
     public static PublicProductImageResponseDTO from(ProductImage image) {
-        return new PublicProductImageResponseDTO(image.getImageUrl(), image.isMain());
+        String publicImageUrl = "/api/v1/public/product-images/" + image.getId() + "/file";
+
+        return new PublicProductImageResponseDTO(publicImageUrl,image.isMain());
     }
 }
