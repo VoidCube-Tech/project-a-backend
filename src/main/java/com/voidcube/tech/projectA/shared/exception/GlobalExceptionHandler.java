@@ -210,4 +210,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleInvalidLandingPage(InvalidPageException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
     }
+
+    @ExceptionHandler(TenantNotFoundException.class)
+    public ResponseEntity<String> handleTenantNotFound(TenantNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(PlanNotFoundException.class)
+    public ResponseEntity<String> handlePlanNotFound(PlanNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
 }

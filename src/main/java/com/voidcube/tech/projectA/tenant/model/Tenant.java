@@ -1,4 +1,4 @@
- package com.voidcube.tech.projectA.tenant.model;
+package com.voidcube.tech.projectA.tenant.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
