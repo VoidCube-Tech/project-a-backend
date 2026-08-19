@@ -31,11 +31,11 @@ public class AnalyticsEvent {
     @Column(name = "event_type", nullable = false)
     private EventType eventType;
 
-    @Column(name = "entity_name", nullable = false)
-    private String entityName;
+    @Column(name = "landing_page_id", nullable = false)
+    private Long landingPageId;
 
-    @Column(name = "entity_id", nullable = false)
-    private String entityId;
+    @Column(name = "product_id", nullable = false)
+    private Long productId;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
