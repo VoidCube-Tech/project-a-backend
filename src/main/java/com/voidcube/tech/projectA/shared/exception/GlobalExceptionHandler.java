@@ -1,8 +1,12 @@
 package com.voidcube.tech.projectA.shared.exception;
 
+import com.voidcube.tech.projectA.export.exception.InvalidExportFormatException;
 import com.voidcube.tech.projectA.promotion.exception.CouponCodeAlreadyExistsException;
 import com.voidcube.tech.projectA.promotion.exception.InvalidPromotionException;
 import com.voidcube.tech.projectA.promotion.exception.PromotionNotFoundException;
+
+import tools.jackson.databind.exc.InvalidFormatException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -219,5 +223,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PlanNotFoundException.class)
     public ResponseEntity<String> handlePlanNotFound(PlanNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidExportFormatException.class)
+    public ResponseEntity<String> handleInvalidExportFormat( InvalidFormatException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
     }
 }
