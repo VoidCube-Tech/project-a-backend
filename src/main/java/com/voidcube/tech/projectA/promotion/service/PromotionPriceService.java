@@ -29,7 +29,7 @@ public class PromotionPriceService {
             .filter(promotion -> promotion.isActive())
             .filter(this::isAutomaticPromotion)
             .map(promotion -> promotion.calculatePriceWithDiscount(originalPrice))
-            .min((firstPrice, secondPrice) -> firstPrice.compareTo(originalPrice))
+            .min(BigDecimal::compareTo)
             .orElse(originalPrice);
     }
 
