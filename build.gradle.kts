@@ -27,6 +27,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-mail")
 	implementation("com.github.usefulness:webp-imageio:0.11.0")
+	implementation("com.bucket4j:bucket4j_jdk17-core:8.19.0")
+	implementation("com.github.ben-manes.caffeine:caffeine")
 	compileOnly("org.projectlombok:lombok")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	annotationProcessor("org.projectlombok:lombok")

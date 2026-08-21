@@ -13,8 +13,12 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
+
+import com.voidcube.tech.projectA.shared.ratelimit.RateLimitFilter;
 
 import jakarta.servlet.http.HttpServletResponse;
+import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableWebSecurity
@@ -33,7 +37,9 @@ public class SecurityConfig {
         return new ProviderManager(provider);
     }
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, ObjectMapper objectMapper) throws Exception {
+        RateLimitFilter rateLimitFilter = new RateLimitFilter(objectMapper);
+
         http
 
         // TODO: Talvez seja necessário implementar CSRF para proteções futuras contra ataques em sessões Cookie
@@ -47,9 +53,12 @@ public class SecurityConfig {
             )
             .logout(logout -> logout
                 .logoutUrl("/api/v1/auth/logout")
-                .logoutSuccessHandler((request, response, authentication) -> response.setStatus(HttpServletResponse.SC_OK))
+                .logoutSuccessHandler((request, response, authentication) -> response.setStatus(HttpServletResponse.SC_OK)))
+                .addFilterAfter(rateLimitFilter, AnonymousAuthenticationFilter.class
 
             );
+
+            
         
             return http.build();
 
