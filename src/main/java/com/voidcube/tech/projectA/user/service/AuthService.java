@@ -15,7 +15,7 @@ import com.voidcube.tech.projectA.shared.exception.TokenExpiredException;
 import com.voidcube.tech.projectA.shared.service.EmailService;
 import com.voidcube.tech.projectA.tenant.model.Tenant;
 import com.voidcube.tech.projectA.tenant.repository.TenantRepository;
-import com.voidcube.tech.projectA.user.dto.request.RegisterRequesteDTO;
+import com.voidcube.tech.projectA.user.dto.request.RegisterRequestDTO;
 import com.voidcube.tech.projectA.user.model.Role;
 import com.voidcube.tech.projectA.user.model.User;
 import com.voidcube.tech.projectA.user.model.VerificationToken;
@@ -38,7 +38,7 @@ public class AuthService {
     private final PlanRepository planRepository;
 
     @Transactional
-    public void register(RegisterRequesteDTO request) {
+    public void register(RegisterRequestDTO request) {
         if(userRepository.findByEmail(request.email()).isPresent()) {
             throw new EmailAlreadyExistsException("Este e-mail já está cadastrado");
         }

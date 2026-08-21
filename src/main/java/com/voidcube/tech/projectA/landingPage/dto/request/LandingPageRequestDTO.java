@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 
 public record LandingPageRequestDTO(
     @NotBlank(message = "Nome obrigatório")
-    @Size(max = 255)
+    @Size(max = 255, message = "Nome deve possuir no maximo 255 caracteres")
     String name,
 
     @NotBlank(message = "Dominio obrigatório")

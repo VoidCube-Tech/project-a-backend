@@ -12,7 +12,7 @@ public record ProductVariationRequestDTO(
     String variationName,
 
     @NotBlank(message = "o valor da variação é obrigatório.")
-    @Size(max = 255, message = "O valor da varia~ção deve ter no maximo 255 caracteres")
+    @Size(max = 255, message = "O valor da variação deve ter no máximo 255 caracteres")
     String variationValue,
 
     @NotNull(message = "O estoque da variação é obrigatório")

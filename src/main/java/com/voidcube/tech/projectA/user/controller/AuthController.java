@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.voidcube.tech.projectA.user.dto.request.LoginRequestDTO;
-import com.voidcube.tech.projectA.user.dto.request.RegisterRequesteDTO;
+import com.voidcube.tech.projectA.user.dto.request.RegisterRequestDTO;
 import com.voidcube.tech.projectA.user.service.AuthService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,7 +41,7 @@ public class AuthController {
     } 
 
     @PostMapping("/register")
-    public String register (@Valid @RequestBody RegisterRequesteDTO dto) {
+    public String register (@Valid @RequestBody RegisterRequestDTO dto) {
         authService.register(dto);
         return "Cadastro realizado com sucesso. Verifique seu email na caixa de mensagens";
     }

@@ -1,11 +1,15 @@
 package com.voidcube.tech.projectA.shared.exception;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import com.voidcube.tech.projectA.export.exception.InvalidExportFormatException;
 import com.voidcube.tech.projectA.promotion.exception.CouponCodeAlreadyExistsException;
 import com.voidcube.tech.projectA.promotion.exception.InvalidPromotionException;
 import com.voidcube.tech.projectA.promotion.exception.PromotionNotFoundException;
 
-import tools.jackson.databind.exc.InvalidFormatException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,217 +20,277 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
-
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<String> handleBadCredentials(
-            BadCredentialsException exception
+    public ResponseEntity<ApiErrorResponse>
+    handleBadCredentials(
+            BadCredentialsException exception,
+            HttpServletRequest request
     ) {
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body("Credenciais inválidas.");
+        return buildResponse(
+                HttpStatus.UNAUTHORIZED,
+                "Credenciais inválidas.",
+                request
+        );
     }
 
     @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<String> handleDisabled(
-            DisabledException exception
+    public ResponseEntity<ApiErrorResponse>
+    handleDisabled(
+            DisabledException exception,
+            HttpServletRequest request
     ) {
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(
-                        "Conta não verificada. "
-                                + "Confira seu e-mail."
-                );
+        return buildResponse(
+                HttpStatus.FORBIDDEN,
+                "Conta não verificada. Confira seu e-mail.",
+                request
+        );
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<String> handleAccessDenied(
-            AccessDeniedException exception
+    public ResponseEntity<ApiErrorResponse>
+    handleAccessDenied(
+            AccessDeniedException exception,
+            HttpServletRequest request
     ) {
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(exception.getMessage());
+        return buildResponse(
+                HttpStatus.FORBIDDEN,
+                exception.getMessage(),
+                request
+        );
     }
 
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<String> handleEmailAlreadyExists(
-            EmailAlreadyExistsException exception
+    @ExceptionHandler({
+            EmailAlreadyExistsException.class,
+            CouponCodeAlreadyExistsException.class,
+            DomainUrlAlreadyException.class
+    })
+    public ResponseEntity<ApiErrorResponse>
+    handleConflict(
+            RuntimeException exception,
+            HttpServletRequest request
     ) {
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(exception.getMessage());
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request
+        );
     }
 
-    @ExceptionHandler(InvalidTokenException.class)
-    public ResponseEntity<String> handleInvalidToken(
-            InvalidTokenException exception
+    @ExceptionHandler({
+            InvalidTokenException.class,
+            TokenExpiredException.class,
+            InvalidProductException.class,
+            InvalidPromotionException.class,
+            InvalidImageException.class,
+            InvalidPageException.class,
+            InvalidExportFormatException.class
+    })
+    public ResponseEntity<ApiErrorResponse>
+    handleBadRequest(
+            RuntimeException exception,
+            HttpServletRequest request
     ) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(exception.getMessage());
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request
+        );
     }
 
-    @ExceptionHandler(TokenExpiredException.class)
-    public ResponseEntity<String> handleTokenExpired(
-            TokenExpiredException exception
+    @ExceptionHandler({
+            ProductNotFoundException.class,
+            PromotionNotFoundException.class,
+            ProductImageNotFoundException.class,
+            LandingPageNotFoundException.class,
+            TenantNotFoundException.class,
+            PlanNotFoundException.class
+    })
+    public ResponseEntity<ApiErrorResponse>
+    handleNotFound(
+            RuntimeException exception,
+            HttpServletRequest request
     ) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(exception.getMessage());
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage(),
+                request
+        );
     }
 
-    @ExceptionHandler(InvalidProductException.class)
-    public ResponseEntity<String> handleInvalidProduct(
-            InvalidProductException exception
+    @ExceptionHandler(ImageStorageException.class)
+    public ResponseEntity<ApiErrorResponse>
+    handleImageStorage(
+            ImageStorageException exception,
+            HttpServletRequest request
     ) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(exception.getMessage());
+        return buildResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Não foi possível processar o arquivo da imagem.",
+                request
+        );
     }
 
-    @ExceptionHandler(ProductNotFoundException.class)
-    public ResponseEntity<String> handleProductNotFound(
-            ProductNotFoundException exception
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiErrorResponse>
+    handleMaxUploadSize(
+            MaxUploadSizeExceededException exception,
+            HttpServletRequest request
     ) {
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(exception.getMessage());
-    }
-
-    @ExceptionHandler(InvalidPromotionException.class)
-    public ResponseEntity<String> handleInvalidPromotion(
-            InvalidPromotionException exception
-    ) {
-        return ResponseEntity
-                .badRequest()
-                .body(exception.getMessage());
-    }
-
-    @ExceptionHandler(PromotionNotFoundException.class)
-    public ResponseEntity<String> handlePromotionNotFound(
-            PromotionNotFoundException exception
-    ) {
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(exception.getMessage());
-    }
-
-    @ExceptionHandler(CouponCodeAlreadyExistsException.class)
-    public ResponseEntity<String> handleCouponConflict(
-            CouponCodeAlreadyExistsException exception
-    ) {
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(exception.getMessage());
+        return buildResponse(
+                HttpStatus.CONTENT_TOO_LARGE,
+                "A imagem ultrapassa o limite máximo permitido de 5 MB.",
+                request
+        );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<String> handleValidation(
-            MethodArgumentNotValidException exception
+    public ResponseEntity<ApiErrorResponse>
+    handleRequestBodyValidation(
+            MethodArgumentNotValidException exception,
+            HttpServletRequest request
     ) {
-        String message = exception
-                .getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(error ->
-                        error.getField()
-                                + ": "
-                                + error.getDefaultMessage()
-                )
-                .distinct()
-                .collect(Collectors.joining("; "));
+        List<FieldValidationErrorResponse> fieldErrors =
+                exception
+                        .getBindingResult()
+                        .getFieldErrors()
+                        .stream()
+                        .map(error ->
+                                new FieldValidationErrorResponse(
+                                        error.getField(),
+                                        error.getDefaultMessage()
+                                )
+                        )
+                        .distinct()
+                        .toList();
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(message);
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                "Um ou mais campos são inválidos.",
+                request,
+                fieldErrors
+        );
+    }
+
+    @ExceptionHandler(
+            HandlerMethodValidationException.class
+    )
+    public ResponseEntity<ApiErrorResponse>
+    handleMethodValidation(
+            HandlerMethodValidationException exception,
+            HttpServletRequest request
+    ) {
+        List<FieldValidationErrorResponse> fieldErrors =
+                exception
+                        .getParameterValidationResults()
+                        .stream()
+                        .flatMap(result ->
+                                result
+                                        .getResolvableErrors()
+                                        .stream()
+                                        .map(error ->
+                                                new FieldValidationErrorResponse(
+                                                        result
+                                                                .getMethodParameter()
+                                                                .getParameterName(),
+                                                        error.getDefaultMessage()
+                                                )
+                                        )
+                        )
+                        .distinct()
+                        .toList();
+
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                "Um ou mais parâmetros são inválidos.",
+                request,
+                fieldErrors
+        );
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiErrorResponse>
+    handleConstraintViolation(
+            ConstraintViolationException exception,
+            HttpServletRequest request
+    ) {
+        List<FieldValidationErrorResponse> fieldErrors =
+                exception
+                        .getConstraintViolations()
+                        .stream()
+                        .map(violation ->
+                                new FieldValidationErrorResponse(
+                                        violation
+                                                .getPropertyPath()
+                                                .toString(),
+                                        violation.getMessage()
+                                )
+                        )
+                        .distinct()
+                        .toList();
+
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                "Um ou mais parâmetros são inválidos.",
+                request,
+                fieldErrors
+        );
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<String> handleUnreadableMessage(
-            HttpMessageNotReadableException exception
+    public ResponseEntity<ApiErrorResponse>
+    handleUnreadableMessage(
+            HttpMessageNotReadableException exception,
+            HttpServletRequest request
     ) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(
-                        "JSON inválido. Verifique os valores "
-                                + "e os tipos dos campos informados."
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                "JSON inválido. Verifique os valores e os tipos dos campos informados.",
+                request
+        );
+    }
+
+    private ResponseEntity<ApiErrorResponse> buildResponse(
+            HttpStatus status,
+            String message,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                status,
+                message,
+                request,
+                List.of()
+        );
+    }
+
+    private ResponseEntity<ApiErrorResponse> buildResponse(
+            HttpStatus status,
+            String message,
+            HttpServletRequest request,
+            List<FieldValidationErrorResponse> fieldErrors
+    ) {
+        String safeMessage =
+                message == null || message.isBlank()
+                        ? status.getReasonPhrase()
+                        : message;
+
+        ApiErrorResponse response =
+                new ApiErrorResponse(
+                        LocalDateTime.now(),
+                        status.value(),
+                        status.getReasonPhrase(),
+                        safeMessage,
+                        request.getRequestURI(),
+                        fieldErrors
                 );
-    }
 
-    @ExceptionHandler(InvalidImageException.class)
-    public ResponseEntity<String> handleInvalidImage(
-        InvalidImageException exception
-) {
         return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(exception.getMessage());
-}
-
-     @ExceptionHandler(ImageStorageException.class)
-     public ResponseEntity<String> handleImageStorage(
-        ImageStorageException exception
-) {
-        return ResponseEntity
-            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(
-                    "Não foi possível processar "
-                            + "o arquivo da imagem."
-            );
-}
-
-    @ExceptionHandler(ProductImageNotFoundException.class)
-    public ResponseEntity<String> handleProductImageNotFound(
-        ProductImageNotFoundException exception
-) {
-        return ResponseEntity
-            .status(HttpStatus.NOT_FOUND)
-            .body(exception.getMessage());
-}
-
-    @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<String> handleMaxUploadSize(
-        MaxUploadSizeExceededException exception
-) {
-        return ResponseEntity
-            .status(HttpStatus.CONTENT_TOO_LARGE)
-            .body(
-                    "A imagem ultrapassa o limite máximo "
-                            + "permitido de 5 MB."
-            );
-}
-
-    @ExceptionHandler(DomainUrlAlreadyException.class)
-    public ResponseEntity<String> handleDomainAlready(DomainUrlAlreadyException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-    }
-
-    @ExceptionHandler(LandingPageNotFoundException.class)
-    public ResponseEntity<String> handleLandingPageNotFound(LandingPageNotFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidPageException.class)
-    public ResponseEntity<String> handleInvalidLandingPage(InvalidPageException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-    }
-
-    @ExceptionHandler(TenantNotFoundException.class)
-    public ResponseEntity<String> handleTenantNotFound(TenantNotFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-    }
-
-    @ExceptionHandler(PlanNotFoundException.class)
-    public ResponseEntity<String> handlePlanNotFound(PlanNotFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidExportFormatException.class)
-    public ResponseEntity<String> handleInvalidExportFormat( InvalidFormatException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+                .status(status)
+                .body(response);
     }
 }

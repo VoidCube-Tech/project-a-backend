@@ -2,7 +2,7 @@ package com.voidcube.tech.projectA.promotion.controller;
 
 import java.math.BigDecimal;
 import java.util.List;
-
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -179,7 +179,31 @@ class PromotionControllerTest {
                     """)
         )
             .andExpect(status().isBadRequest())
-            .andExpect(content().string("Campos incompatíveis"));
+            .andExpect(status().isBadRequest())
+.andExpect(
+        jsonPath("$.status")
+                .value(400)
+)
+.andExpect(
+        jsonPath("$.error")
+                .value("Bad Request")
+)
+.andExpect(
+        jsonPath("$.message")
+                .value("Campos incompatíveis")
+)
+.andExpect(
+        jsonPath("$.path")
+                .value("/api/v1/promotions")
+)
+.andExpect(
+        jsonPath("$.fieldErrors")
+                .isArray()
+)
+.andExpect(
+        jsonPath("$.fieldErrors")
+                .isEmpty()
+);
     }
 
     @Test
