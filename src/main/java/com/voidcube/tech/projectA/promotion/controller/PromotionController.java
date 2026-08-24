@@ -61,4 +61,29 @@ public class PromotionController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{promotionId}/products/{productId}")
+    public ResponseEntity<Void> associateProduct(
+        @PathVariable Long productId,
+        @PathVariable Long promotionId
+    ) {
+        boolean associated = promotionService.associateProduct(promotionId, productId);
+
+        if(!associated) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @DeleteMapping("/{promotionId}/products/{productId}")
+    public ResponseEntity<Void> disassociateProduct(
+        @PathVariable Long promotionId,
+        @PathVariable Long productId
+    ) {
+        promotionService.disassociateProduct(promotionId, productId);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+    
 }

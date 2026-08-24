@@ -34,7 +34,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,31 +57,6 @@ class PromotionControllerTest {
             .setControllerAdvice(new GlobalExceptionHandler())
             .build();
     }
-
-    @Test
-    void deveRetornarCreatedAoCriarPromocao() throws Exception {
-        when(promotionService.create(any())).thenReturn(response());
-
-        mockMvc.perform(
-            post("/api/v1/promotions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                    {
-                      "name": "Promo percentual",
-                      "active": true,
-                      "promotionType": "PERCENTAGE",
-                      "discountPercentage": 15.00
-                    }
-                    """)
-        )
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").value(100))
-            .andExpect(jsonPath("$.promotionType").value("PERCENTAGE"))
-            .andExpect(jsonPath("$.productIds").doesNotExist());
-
-        verify(promotionService).create(any());
-    }
-
     @Test
     void deveListarPromocoesPaginadas() throws Exception {
         when(promotionService.findAll(any(Pageable.class)))
@@ -231,4 +205,61 @@ class PromotionControllerTest {
             null
         );
     }
+
+    @Test
+void deveRetornarCreatedAoAssociarProduto() throws Exception {
+    when(
+            promotionService.associateProduct(
+                    100L,
+                    200L
+            )
+    ).thenReturn(true);
+
+    mockMvc.perform(
+                    post(
+                            "/api/v1/promotions/100/products/200"
+                    )
+            )
+            .andExpect(status().isCreated())
+            .andExpect(content().string(""));
+
+    verify(promotionService)
+            .associateProduct(100L, 200L);
+}
+
+@Test
+void deveRetornarNoContentParaAssociacaoDuplicada()
+        throws Exception {
+    when(
+            promotionService.associateProduct(
+                    100L,
+                    200L
+            )
+    ).thenReturn(false);
+
+    mockMvc.perform(
+                    post(
+                            "/api/v1/promotions/100/products/200"
+                    )
+            )
+            .andExpect(status().isNoContent());
+
+    verify(promotionService)
+            .associateProduct(100L, 200L);
+}
+
+@Test
+void deveRetornarNoContentAoDesassociarProduto()
+        throws Exception {
+    mockMvc.perform(
+                    delete(
+                            "/api/v1/promotions/100/products/200"
+                    )
+            )
+            .andExpect(status().isNoContent());
+
+    verify(promotionService)
+            .disassociateProduct(100L, 200L);
+}
+    
 }

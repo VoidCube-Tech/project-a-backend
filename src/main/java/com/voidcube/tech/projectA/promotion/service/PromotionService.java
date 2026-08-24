@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.voidcube.tech.projectA.audit.service.AuditLogService;
+import com.voidcube.tech.projectA.product.model.Product;
+import com.voidcube.tech.projectA.product.repository.ProductRepository;
 import com.voidcube.tech.projectA.promotion.dto.request.PromotionRequestDTO;
 import com.voidcube.tech.projectA.promotion.dto.response.PromotionResponseDTO;
 import com.voidcube.tech.projectA.promotion.exception.CouponCodeAlreadyExistsException;
@@ -25,6 +27,7 @@ import com.voidcube.tech.projectA.promotion.model.Promotion;
 import com.voidcube.tech.projectA.promotion.model.PromotionType;
 import com.voidcube.tech.projectA.promotion.model.ScheduledPromotion;
 import com.voidcube.tech.projectA.promotion.repository.PromotionRepository;
+import com.voidcube.tech.projectA.shared.exception.ProductNotFoundException;
 import com.voidcube.tech.projectA.shared.security.AuthenticatedUserProvider;
 import com.voidcube.tech.projectA.tenant.model.Tenant;
 import com.voidcube.tech.projectA.user.model.User;
@@ -41,6 +44,7 @@ public class PromotionService {
     private final PromotionRepository promotionRepository;
     private final AuthenticatedUserProvider authenticatedUserProvider;
     private final AuditLogService auditLogService;
+    private final ProductRepository productRepository;
 
     @Transactional
     public PromotionResponseDTO create(PromotionRequestDTO request) {
@@ -94,6 +98,56 @@ public class PromotionService {
             "Promotion",
             promotionId.toString()
         );
+    }
+
+    @Transactional
+    public boolean associateProduct(Long promotionId, Long productId) {
+        Long tenantId = getAuthenticatedTenant().getId();
+
+        Promotion promotion = promotionRepository
+            .findByIdAndTenant_Id(promotionId, tenantId)
+            .orElseThrow(()-> new PromotionNotFoundException(promotionId));
+
+        Product product = productRepository
+            .findByIdAndTenant_Id(productId, tenantId)
+            .orElseThrow(()-> new ProductNotFoundException(productId));
+
+        boolean associated = promotion.addProduct(product);
+
+        if(!associated) {
+            return false;
+        }
+
+        promotionRepository.saveAndFlush(promotion);
+
+        auditLogService.register("PROMOTION_PRODUCT_ASSOCIATE", "PromotionProduct", promotionId + ":" + productId);
+
+        return true;
+    }
+
+    @Transactional
+    public boolean disassociateProduct(Long promotionId, Long productId) {
+        Long tenantId = getAuthenticatedTenant().getId();
+
+        Promotion promotion = promotionRepository
+            .findByIdAndTenant_Id(promotionId, tenantId)
+            .orElseThrow(()-> new PromotionNotFoundException(promotionId));
+
+        Product product = productRepository
+            .findByIdAndTenant_Id(productId, tenantId)
+            .orElseThrow(() -> new ProductNotFoundException(productId));
+
+        boolean disassociated = promotion.removeProduct(product);
+
+        if(!disassociated) {
+            return false;
+        }
+
+        promotionRepository.saveAndFlush(promotion);
+
+        auditLogService.register("PROMOTION_PRODUCT_DISASSOCIATE", "PromotionProduct", promotionId + ":" + productId);
+
+        return true;
     }
 
     private Promotion createPromotionForType(

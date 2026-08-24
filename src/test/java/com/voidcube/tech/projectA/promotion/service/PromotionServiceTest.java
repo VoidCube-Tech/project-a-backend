@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.voidcube.tech.projectA.product.model.Product;
+import com.voidcube.tech.projectA.product.repository.ProductRepository;
+import com.voidcube.tech.projectA.shared.exception.ProductNotFoundException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,6 +40,8 @@ import com.voidcube.tech.projectA.tenant.model.Tenant;
 import com.voidcube.tech.projectA.user.model.Role;
 import com.voidcube.tech.projectA.user.model.User;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -58,6 +63,9 @@ class PromotionServiceTest {
 
     @Mock
     private AuditLogService auditLogService;
+
+    @Mock
+    private ProductRepository productRepository;
 
     @InjectMocks
     private PromotionService promotionService;
@@ -472,4 +480,185 @@ class PromotionServiceTest {
             5
         );
     }
+    @Test
+void deveAssociarProdutoDoMesmoTenantEAuditar() {
+    PercentagePromotion promotion =
+            new PercentagePromotion();
+
+    promotion.setId(100L);
+    promotion.setTenant(tenant);
+
+    Product product = new Product();
+    product.setId(200L);
+    product.setTenant(tenant);
+
+    when(
+            promotionRepository.findByIdAndTenant_Id(
+                    100L,
+                    10L
+            )
+    ).thenReturn(Optional.of(promotion));
+
+    when(
+            productRepository.findByIdAndTenant_Id(
+                    200L,
+                    10L
+            )
+    ).thenReturn(Optional.of(product));
+
+    boolean associated =
+            promotionService.associateProduct(
+                    100L,
+                    200L
+            );
+
+    assertTrue(associated);
+    assertTrue(promotion.getProducts().contains(product));
+    assertTrue(product.getPromotions().contains(promotion));
+
+    verify(promotionRepository)
+            .saveAndFlush(promotion);
+
+    verify(auditLogService).register(
+            "PROMOTION_PRODUCT_ASSOCIATE",
+            "PromotionProduct",
+            "100:200"
+    );
+}
+
+@Test
+void naoDeveSalvarAssociacaoDuplicada() {
+    PercentagePromotion promotion =
+            new PercentagePromotion();
+
+    promotion.setId(100L);
+    promotion.setTenant(tenant);
+
+    Product product = new Product();
+    product.setId(200L);
+    product.setTenant(tenant);
+
+    promotion.addProduct(product);
+
+    when(
+            promotionRepository.findByIdAndTenant_Id(
+                    100L,
+                    10L
+            )
+    ).thenReturn(Optional.of(promotion));
+
+    when(
+            productRepository.findByIdAndTenant_Id(
+                    200L,
+                    10L
+            )
+    ).thenReturn(Optional.of(product));
+
+    boolean associated =
+            promotionService.associateProduct(
+                    100L,
+                    200L
+            );
+
+    assertFalse(associated);
+
+    verify(
+            promotionRepository,
+            never()
+    ).saveAndFlush(any());
+
+    verify(
+            auditLogService,
+            never()
+    ).register(any(), any(), any());
+}
+
+@Test
+void deveDesassociarProdutoEAuditar() {
+    PercentagePromotion promotion =
+            new PercentagePromotion();
+
+    promotion.setId(100L);
+    promotion.setTenant(tenant);
+
+    Product product = new Product();
+    product.setId(200L);
+    product.setTenant(tenant);
+
+    promotion.addProduct(product);
+
+    when(
+            promotionRepository.findByIdAndTenant_Id(
+                    100L,
+                    10L
+            )
+    ).thenReturn(Optional.of(promotion));
+
+    when(
+            productRepository.findByIdAndTenant_Id(
+                    200L,
+                    10L
+            )
+    ).thenReturn(Optional.of(product));
+
+    boolean disassociated =
+            promotionService.disassociateProduct(
+                    100L,
+                    200L
+            );
+
+    assertTrue(disassociated);
+    assertFalse(promotion.getProducts().contains(product));
+    assertFalse(product.getPromotions().contains(promotion));
+
+    verify(promotionRepository)
+            .saveAndFlush(promotion);
+
+    verify(auditLogService).register(
+            "PROMOTION_PRODUCT_DISASSOCIATE",
+            "PromotionProduct",
+            "100:200"
+    );
+}
+
+@Test
+void naoDeveAssociarProdutoDeOutroTenant() {
+    PercentagePromotion promotion =
+            new PercentagePromotion();
+
+    promotion.setId(100L);
+    promotion.setTenant(tenant);
+
+    when(
+            promotionRepository.findByIdAndTenant_Id(
+                    100L,
+                    10L
+            )
+    ).thenReturn(Optional.of(promotion));
+
+    when(
+            productRepository.findByIdAndTenant_Id(
+                    200L,
+                    10L
+            )
+    ).thenReturn(Optional.empty());
+
+    assertThrows(
+            ProductNotFoundException.class,
+            () -> promotionService.associateProduct(
+                    100L,
+                    200L
+            )
+    );
+
+    verify(
+            promotionRepository,
+            never()
+    ).saveAndFlush(any());
+
+    verify(
+            auditLogService,
+            never()
+    ).register(any(), any(), any());
+}
 }
