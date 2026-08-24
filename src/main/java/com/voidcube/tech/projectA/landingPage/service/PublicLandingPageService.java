@@ -41,6 +41,7 @@ public class PublicLandingPageService {
             .toList();
 
             return new PublicLandingPageResponseDTO(
+                landingPage.getId(),
                 landingPage.getName(),
                 landingPage.getWhatsappNumber(),
                 products

@@ -8,6 +8,7 @@ import com.voidcube.tech.projectA.product.model.Product;
 import com.voidcube.tech.projectA.product.model.ProductImage;
 
 public record PublicProductResponseDTO(
+    long productId,
     String name,
     String description,
     BigDecimal finalPrice,
@@ -30,6 +31,7 @@ public record PublicProductResponseDTO(
                 .toList();
 
             return new PublicProductResponseDTO(
+                product.getId(),
                 product.getName(),
                 product.getDescription(),
                 finalPrice,
