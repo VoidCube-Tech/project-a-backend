@@ -38,6 +38,7 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 	testCompileOnly("org.projectlombok:lombok")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	testRuntimeOnly("com.h2database:h2:2.3.232")
 	testAnnotationProcessor("org.projectlombok:lombok")
 }
 

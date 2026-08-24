@@ -14,7 +14,8 @@ public interface AnalyticsEventRepository extends JpaRepository<AnalyticsEvent, 
     
     @Query("""
             SELECT event.productId AS productId,
-            event.eventType AS eventType
+            event.eventType AS eventType,
+            COUNT(event.id) AS eventCount
             FROM AnalyticsEvent event WHERE event.productId IN :productIds
             GROUP BY
                 event.productId,

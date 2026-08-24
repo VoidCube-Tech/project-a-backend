@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping
+@RequestMapping("/api/v1/dashboard/metrics")
 @PreAuthorize("hasRole('ADMIN')")
 public class DashboardMetricsController {
     
