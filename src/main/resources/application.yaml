@@ -22,3 +22,9 @@ app:
   storage:
     images:
       max-size-bytes: 5242880
+  
+  messages:
+    basename: messages
+    enconding: UTF-8
+    fallback-to-system-locale: false
+

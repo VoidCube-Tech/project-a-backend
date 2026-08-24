@@ -5,21 +5,19 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record LandingPageRequestDTO(
-    @NotBlank(message = "Nome obrigatório")
-    @Size(max = 255, message = "Nome deve possuir no maximo 255 caracteres")
+    @NotBlank(message = "{validation.landing-page.name.required}")
+    @Size(max = 255, message = "{validation.landing-page.name.size}")
     String name,
 
-    @NotBlank(message = "Dominio obrigatório")
-    @Size(max = 255)
+    @NotBlank(message = "{validation.landing-page.domain.required}")
+    @Size(max = 255, message = "{validation.landing-page.domain.size}")
     @Pattern(regexp = "^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$",
-            message = "O domínio deve usar apenas letras, números e hífens."
-    )
+        message = "validation.landing-page.domain.pattern}")
     String domainUrl,
 
-    @Size(max = 30)
+    @Size(max = 30, message = "{validation.landing-page.whatsapp.size}")
     @Pattern(regexp = "^$|^\\+?[0-9()\\s-]+$",
-            message = "O número possui caracteres inválidos"
-    )
+        message = "{validation.landing-page.whatsapp.pattern}")
     String whatsappNumber
 
 

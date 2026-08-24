@@ -4,5 +4,5 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 public record UpdateTenantPlanRequest(
-    @NotNull(message = "O ID do plano é obrigatório") @Positive Long planId
+    @NotNull(message = "{validation.tenant.plan-id.required}") @Positive(message = "{validation.tenant.plan-id.positive}" ) Long planId
 ) {}

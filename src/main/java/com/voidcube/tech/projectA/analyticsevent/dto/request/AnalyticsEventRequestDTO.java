@@ -6,9 +6,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 public record AnalyticsEventRequestDTO(
-    @NotNull(message = "O ID da landing page é obrigatório") @Positive Long landingPageId,
-    @NotNull(message = "O ID de produto é obrigatório") @Positive Long productId,
-    @NotNull(message = "O tipo do evento é indispensável") EventType eventType
+    @NotNull(message = "{validation.analytics.landing-page-id.required}") @Positive(message = "{validation.analytics.landing-page-id.positive}") Long landingPageId,
+    @NotNull(message = "validation.analytics.product-id.required}") @Positive(message = "{validation.analytics.product-id.positive}" ) Long productId,
+    @NotNull(message = "{validation.analytics.event-type.required}") EventType eventType
 ) {
     
 }

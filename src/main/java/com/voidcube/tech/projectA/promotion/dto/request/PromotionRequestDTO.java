@@ -15,32 +15,33 @@ import jakarta.validation.constraints.Size;
 
 public record PromotionRequestDTO(
 
-    @NotBlank(message = "O nome da promoção é obrigatório")
-    @Size(max = 255, message = "O nome da promoção não pode exceder 255 caracteres")
+    @NotBlank(message = "{validation.promotion.name.required}")
+    @Size(max = 255, message = "{validation.promotion.name.size}")
     String name,
 
-    @NotNull(message = "O estado da promoção é obrigatório")
+    @NotNull(message = "{validation.promotion.active.required}")
     Boolean active,
 
-    @NotNull(message = "O tipo da promoção é obrigatório")
+    @NotNull(message = "{validation.promotion.type.required}")
     PromotionType promotionType,
 
-    @DecimalMin(value = "0.01", message = "O percentual de desconto deve ser maior que zero")
-    @DecimalMax(value = "100.00", message = "O percentual de desconto não pode exceder 100")
-    @Digits(integer = 3, fraction = 2, message = "O percentual de desconto deve possuir no máximo 2 casas decimais")
+    @DecimalMin(value = "0.01", message = "{validation.promotion.percentage.minimum}")
+    @DecimalMax(value = "100.00", message = "{validation.promotion.percentage.maximum}")
+    @Digits(integer = 3, fraction = 2, message = "{validation.promotion.percentage.digits}")
     BigDecimal discountPercentage,
 
     LocalDateTime startDate,
 
     LocalDateTime endDate,
 
-    @DecimalMin(value = "0.01", message = "O valor do desconto deve ser maior que zero")
-    @Digits(integer = 17, fraction = 2, message = "O valor do desconto deve possuir no máximo 2 casas decimais")
+    @DecimalMin(value = "0.01", message = "{validation.promotion.value.minimum}")
+    @Digits(integer = 17, fraction = 2, message = "{validation.promotion.value.digits}")
     BigDecimal discountValue,
 
-    @Size(max = 100, message = "O código do cupom não pode exceder 100 caracteres")
+    @Size(max = 100, message = "{validation.promotion.coupon.size}")
     String couponCode,
 
-    @Positive(message = "O limite de uso deve ser maior que zero")
+    @Positive(message = "{validation.promotion.usage-limit.positive}")
     Integer usageLimit
+
 ) {}

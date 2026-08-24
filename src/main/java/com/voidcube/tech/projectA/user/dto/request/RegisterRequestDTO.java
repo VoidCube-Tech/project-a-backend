@@ -6,11 +6,18 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequestDTO(
-    @NotBlank @Size(max = 255, message = "no máximo 255 caracteres") String companyName,
-    @NotBlank @Email @Size(max = 255, message = "no máximo 255 caracteres") String email,
-    @NotBlank @Size(min = 8, max = 72, message = "Senha deve possuir no minímo 8 e no maxímo 72 caracteres")
+    @NotBlank(message = "{validation.auth.company-name.required}") 
+    @Size(max = 255, message = "{validation.auth.company-name.size}") 
+    String companyName,
+
+    @NotBlank(message = "{validation.auth.email.required}") 
+    @Email(message = "{validation.auth.email.invalid}") 
+    @Size(max = 255, message = "{validation.auth.email.size}") 
+    String email,
+
+    @NotBlank(message = "{validation.auth.password.required") @Size(min = 8, max = 72, message = "{validation.auth.password.size}")
     @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!\\-_]).*$" , 
-    message = "A senha deve conter uma letra maiúscula, uma minúscula, um número e caractere especial")
+    message = "{validation.auth.password.pattern}")
     String password
 ) {}
     

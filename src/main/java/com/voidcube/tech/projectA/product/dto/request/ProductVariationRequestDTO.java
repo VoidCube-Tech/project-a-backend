@@ -7,16 +7,16 @@ import jakarta.validation.constraints.Size;
 
 public record ProductVariationRequestDTO(
 
-    @NotBlank(message = "O nome da variação é obrigatório.")
-    @Size(max = 255 ,message = "nome da variação deve ter no máximo 255 caracteres")
+    @NotBlank(message = "{validation.product.variation.name.required}")
+    @Size(max = 255, message = "{validation.product.variation.name.size}")
     String variationName,
 
-    @NotBlank(message = "o valor da variação é obrigatório.")
-    @Size(max = 255, message = "O valor da variação deve ter no máximo 255 caracteres")
+    @NotBlank(message = "{validation.product.variation.value.required}")
+    @Size(max = 255, message = "{validation.product.variation.value.size}")
     String variationValue,
 
-    @NotNull(message = "O estoque da variação é obrigatório")
-    @PositiveOrZero(message = "O estoque não pode ser negativo")
-    Integer stockQuantity   
-) 
-{}
+    @NotNull(message = "{validation.product.variation.stock.required}")
+    @PositiveOrZero(message = "{validation.product.variation.stock.non-negative}")
+    Integer stockQuantity
+
+) {}

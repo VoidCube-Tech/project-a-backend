@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.voidcube.tech.projectA.shared.service.MessageService;
 import com.voidcube.tech.projectA.user.dto.request.LoginRequestDTO;
 import com.voidcube.tech.projectA.user.dto.request.RegisterRequestDTO;
 import com.voidcube.tech.projectA.user.service.AuthService;
@@ -26,6 +27,7 @@ public class AuthController {
     
     private final AuthenticationManager authenticationManager;
     private final AuthService authService;
+    private final MessageService messageService;
 
     @PostMapping("/login")
     public String login(@Valid @RequestBody LoginRequestDTO request, HttpServletRequest httpRequest ) {
@@ -37,19 +39,19 @@ public class AuthController {
 
         httpRequest.getSession(true);
 
-        return "Login realizado com sucesso";
+       return messageService.get("auth.login.success");
     } 
 
     @PostMapping("/register")
     public String register (@Valid @RequestBody RegisterRequestDTO dto) {
         authService.register(dto);
-        return "Cadastro realizado com sucesso. Verifique seu email na caixa de mensagens";
+        return messageService.get("auth.register.success");
     }
 
     @GetMapping("/verify-email")
     public String verifyEmail(@RequestParam("token") String token) {
         authService.verifyEmail(token);
-        return "E-mail verificado com sucesso. Você já pode fazer login";
+        return "auth.email-verification.success";
     }
 }
 
