@@ -67,7 +67,7 @@ public class AuthController {
         return messageService.get("auth.email-verification.success");
     }
 
-    @GetMapping("/crsf")
+    @GetMapping("/csrf")
     public CsrfToken csrf(CsrfToken csrfToken) {
         return csrfToken;
     }
