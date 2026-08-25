@@ -1,5 +1,11 @@
 package com.voidcube.tech.projectA.shared.config;
 
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -57,13 +63,59 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, ObjectMapper objectMapper, SecurityContextRepository securityContextRepository, SessionAuthenticationStrategy sessionAuthenticationStrategy) throws Exception {
+    public UrlBasedCorsConfigurationSource corsConfigurationSource(
+    @Value ("${app.frontend.url:http://localhost:5173}") 
+    String frontendUrl
+) {
+    CorsConfiguration configuration = new CorsConfiguration();
+
+    configuration.setAllowedOrigins(List.of(frontendUrl));
+
+    configuration.setAllowedMethods(List.of(
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+    ));
+
+    configuration.setAllowedHeaders(List.of(
+        "content-Type",
+        "accept",
+        "X-XSRF-TOKEN",
+        "X-CSRF-TOKEN"
+    ));
+
+    configuration.setExposedHeaders(List.of(
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining"
+    ));
+
+    configuration.setAllowCredentials(true);
+    configuration.setMaxAge(3600L);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
+    source.registerCorsConfiguration("/api/**", configuration);
+
+    return source;
+    }
+
+
+    @Bean
+    public SecurityFilterChain filterChain(
+        HttpSecurity http, 
+        ObjectMapper objectMapper, 
+        SecurityContextRepository securityContextRepository, 
+        SessionAuthenticationStrategy sessionAuthenticationStrategy,
+        UrlBasedCorsConfigurationSource corsConfigurationSource) throws Exception {
+
         RateLimitFilter rateLimitFilter = new RateLimitFilter(objectMapper);
 
         http
 
-        // TODO: Talvez seja necessário implementar CSRF para proteções futuras contra ataques em sessões Cookie
-        .csrf(csrf -> csrf.disable())
+        .csrf(csrf -> csrf.spa().ignoringRequestMatchers("/api/v1/public/analytics/events"))
+        .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
         .securityContext(securityContext -> securityContext
             .securityContextRepository(securityContextRepository)

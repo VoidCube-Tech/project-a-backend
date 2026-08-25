@@ -23,6 +23,7 @@ import com.voidcube.tech.projectA.shared.config.SecurityConfig;
 import com.voidcube.tech.projectA.shared.service.MessageService;
 import com.voidcube.tech.projectA.user.service.AuthService;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -86,6 +87,7 @@ class AuthControllerSessionTest {
         MvcResult loginResult =
                 mockMvc.perform(
                                 post("/api/v1/auth/login")
+                                .with(csrf())
                                         .session(sessionBeforeLogin)
                                         .contentType(
                                                 "application/json"

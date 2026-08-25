@@ -14,6 +14,7 @@ import com.voidcube.tech.projectA.shared.config.SecurityConfig;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -39,6 +40,17 @@ class PromotionControllerSecurityTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
+    void deveBloquearAlteracaoSemCsrf() throws Exception {
+    mockMvc.perform(
+            delete("/api/v1/promotions/100")
+    )
+            .andExpect(status().isForbidden());
+
+    verifyNoInteractions(promotionService);
+}
+
+    @Test
     @WithMockUser(roles = "USER")
     void deveNegarUsuarioSemPapelAdmin() throws Exception {
         mockMvc.perform(delete("/api/v1/promotions/100"))
@@ -50,7 +62,9 @@ class PromotionControllerSecurityTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void devePermitirUsuarioAdmin() throws Exception {
-        mockMvc.perform(delete("/api/v1/promotions/100"))
+        mockMvc.perform(delete("/api/v1/promotions/100")
+        .with(csrf())
+    )
             .andExpect(status().isNoContent());
 
         verify(promotionService).delete(100L);

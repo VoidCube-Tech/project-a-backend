@@ -7,6 +7,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -64,6 +65,11 @@ public class AuthController {
     public String verifyEmail(@RequestParam("token") String token) {
         authService.verifyEmail(token);
         return messageService.get("auth.email-verification.success");
+    }
+
+    @GetMapping("/crsf")
+    public CsrfToken csrf(CsrfToken csrfToken) {
+        return csrfToken;
     }
 }
 
