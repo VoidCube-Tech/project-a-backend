@@ -17,15 +17,13 @@ public class AnalyticsEventService {
     private final AnalyticsEventRepository analyticsEventRepository;
 
 
-    @Async
+    @Async("analyticsTaskExecutor")
     @Transactional
     public void saveAsync(AnalyticsEventRequestDTO request) {
         AnalyticsEvent event = new AnalyticsEvent();
 
         event.setLandingPageId(request.landingPageId());
-
         event.setProductId(request.productId());
-
         event.setEventType(request.eventType());
 
         analyticsEventRepository.save(event);

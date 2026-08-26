@@ -16,6 +16,12 @@ server:
       timeout: 1h
 
 app:
+  async:
+    analytics:
+      core-pool-size: 2
+      max-pool-size: 4
+      queue-capacity: 500
+      await-termination-seconds: 30
   mail:
     from: no-reply@voidcube.tech
     verification-subject: "Confirme seu e-mail - Project A"

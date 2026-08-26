@@ -11,6 +11,7 @@ import com.voidcube.tech.projectA.promotion.exception.PromotionNotFoundException
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -292,5 +293,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(status)
                 .body(response);
+    }
+    @ExceptionHandler(TaskRejectedException.class)
+    public ResponseEntity<ApiErrorResponse> handleTaskRejected(TaskRejectedException e, HttpServletRequest request) {
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE,
+                 "O serviço de analytics está " + "temporariamente sobrecarregado." + "tente novamente.", request);
     }
 }

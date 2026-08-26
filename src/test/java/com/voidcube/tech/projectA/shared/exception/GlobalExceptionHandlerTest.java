@@ -10,7 +10,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-
+import org.springframework.core.task.TaskRejectedException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -137,4 +137,38 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().fieldErrors())
                 .isEmpty();
     }
+
+    @Test
+        void shouldReturnServiceUnavailableWhenAsyncQueueIsFull() {
+        request.setRequestURI(
+            "/api/v1/public/analytics/events"
+        );
+
+        TaskRejectedException exception =
+            new TaskRejectedException(
+                    "Fila de analytics cheia"
+            );
+
+        ResponseEntity<ApiErrorResponse> response =
+            handler.handleTaskRejected(
+                    exception,
+                    request
+            );
+
+        assertThat(response.getStatusCode())
+            .isEqualTo(
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
+
+        assertThat(response.getBody())
+            .isNotNull();
+
+        assertThat(response.getBody().status())
+            .isEqualTo(503);
+
+        assertThat(response.getBody().path())
+            .isEqualTo(
+                    "/api/v1/public/analytics/events"
+            );
+  }
 }
