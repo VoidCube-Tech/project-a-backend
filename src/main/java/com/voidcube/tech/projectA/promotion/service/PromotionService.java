@@ -39,7 +39,7 @@ import lombok.RequiredArgsConstructor;
 public class PromotionService {
 
     private static final String COUPON_CODE_UNIQUE_INDEX =
-        "ux_promotion_tenant_coupon_code";
+            "ux_promotion_tenant_coupon_code";
 
     private final PromotionRepository promotionRepository;
     private final AuthenticatedUserProvider authenticatedUserProvider;
@@ -53,8 +53,9 @@ public class PromotionService {
         validateCommonFields(request);
 
         Promotion promotion = createPromotionForType(
-            request,
-            tenant.getId()
+                request,
+                tenant.getId(),
+                null
         );
 
         promotion.setName(request.name().trim());
@@ -64,9 +65,9 @@ public class PromotionService {
         Promotion savedPromotion = savePromotion(promotion);
 
         auditLogService.register(
-            "PROMOTION_CREATE",
-            "Promotion",
-            savedPromotion.getId().toString()
+                "PROMOTION_CREATE",
+                "Promotion",
+                savedPromotion.getId().toString()
         );
 
         return PromotionResponseDTO.from(savedPromotion);
@@ -77,8 +78,54 @@ public class PromotionService {
         Long tenantId = getAuthenticatedTenant().getId();
 
         return promotionRepository
-            .findAllByTenant_Id(tenantId, pageable)
-            .map(PromotionResponseDTO::from);
+                .findAllByTenant_Id(tenantId, pageable)
+                .map(PromotionResponseDTO::from);
+    }
+
+    @Transactional
+    public PromotionResponseDTO update(
+            Long promotionId,
+            PromotionRequestDTO request
+    ) {
+        Long tenantId = getAuthenticatedTenant().getId();
+
+        validateCommonFields(request);
+
+        Promotion promotion = promotionRepository
+                .findByIdAndTenant_Id(promotionId, tenantId)
+                .orElseThrow(() ->
+                        new PromotionNotFoundException(promotionId)
+                );
+
+        if (promotion.getPromotionType() != request.promotionType()) {
+            throw new InvalidPromotionException(
+                    "O tipo da promoção não pode ser alterado"
+            );
+        }
+
+        Promotion configuredPromotion = createPromotionForType(
+                request,
+                tenantId,
+                promotionId
+        );
+
+        promotion.setName(request.name().trim());
+        promotion.setActive(request.active());
+
+        copyTypeSpecificFields(
+                promotion,
+                configuredPromotion
+        );
+
+        Promotion savedPromotion = savePromotion(promotion);
+
+        auditLogService.register(
+                "PROMOTION_UPDATE",
+                "Promotion",
+                promotionId.toString()
+        );
+
+        return PromotionResponseDTO.from(savedPromotion);
     }
 
     @Transactional
@@ -86,91 +133,127 @@ public class PromotionService {
         Long tenantId = getAuthenticatedTenant().getId();
 
         Promotion promotion = promotionRepository
-            .findByIdAndTenant_Id(promotionId, tenantId)
-            .orElseThrow(() ->
-                new PromotionNotFoundException(promotionId)
-            );
+                .findByIdAndTenant_Id(promotionId, tenantId)
+                .orElseThrow(() ->
+                        new PromotionNotFoundException(promotionId)
+                );
 
         promotionRepository.delete(promotion);
 
         auditLogService.register(
-            "PROMOTION_DELETE",
-            "Promotion",
-            promotionId.toString()
+                "PROMOTION_DELETE",
+                "Promotion",
+                promotionId.toString()
         );
     }
 
     @Transactional
-    public boolean associateProduct(Long promotionId, Long productId) {
+    public boolean associateProduct(
+            Long promotionId,
+            Long productId
+    ) {
         Long tenantId = getAuthenticatedTenant().getId();
 
         Promotion promotion = promotionRepository
-            .findByIdAndTenant_Id(promotionId, tenantId)
-            .orElseThrow(()-> new PromotionNotFoundException(promotionId));
+                .findByIdAndTenant_Id(promotionId, tenantId)
+                .orElseThrow(() ->
+                        new PromotionNotFoundException(promotionId)
+                );
 
         Product product = productRepository
-            .findByIdAndTenant_Id(productId, tenantId)
-            .orElseThrow(()-> new ProductNotFoundException(productId));
+                .findByIdAndTenant_Id(productId, tenantId)
+                .orElseThrow(() ->
+                        new ProductNotFoundException(productId)
+                );
 
         boolean associated = promotion.addProduct(product);
 
-        if(!associated) {
+        if (!associated) {
             return false;
         }
 
         promotionRepository.saveAndFlush(promotion);
 
-        auditLogService.register("PROMOTION_PRODUCT_ASSOCIATE", "PromotionProduct", promotionId + ":" + productId);
+        auditLogService.register(
+                "PROMOTION_PRODUCT_ASSOCIATE",
+                "PromotionProduct",
+                promotionId + ":" + productId
+        );
 
         return true;
     }
 
     @Transactional
-    public boolean disassociateProduct(Long promotionId, Long productId) {
+    public boolean disassociateProduct(
+            Long promotionId,
+            Long productId
+    ) {
         Long tenantId = getAuthenticatedTenant().getId();
 
         Promotion promotion = promotionRepository
-            .findByIdAndTenant_Id(promotionId, tenantId)
-            .orElseThrow(()-> new PromotionNotFoundException(promotionId));
+                .findByIdAndTenant_Id(promotionId, tenantId)
+                .orElseThrow(() ->
+                        new PromotionNotFoundException(promotionId)
+                );
 
         Product product = productRepository
-            .findByIdAndTenant_Id(productId, tenantId)
-            .orElseThrow(() -> new ProductNotFoundException(productId));
+                .findByIdAndTenant_Id(productId, tenantId)
+                .orElseThrow(() ->
+                        new ProductNotFoundException(productId)
+                );
 
-        boolean disassociated = promotion.removeProduct(product);
+        boolean disassociated =
+                promotion.removeProduct(product);
 
-        if(!disassociated) {
+        if (!disassociated) {
             return false;
         }
 
         promotionRepository.saveAndFlush(promotion);
 
-        auditLogService.register("PROMOTION_PRODUCT_DISASSOCIATE", "PromotionProduct", promotionId + ":" + productId);
+        auditLogService.register(
+                "PROMOTION_PRODUCT_DISASSOCIATE",
+                "PromotionProduct",
+                promotionId + ":" + productId
+        );
 
         return true;
     }
 
     private Promotion createPromotionForType(
-        PromotionRequestDTO request,
-        Long tenantId
+            PromotionRequestDTO request,
+            Long tenantId,
+            Long excludedPromotionId
     ) {
         return switch (request.promotionType()) {
-            case PERCENTAGE -> createPercentagePromotion(request);
-            case SCHEDULED -> createScheduledPromotion(request);
-            case COUPON -> createCouponPromotion(request, tenantId);
+            case PERCENTAGE ->
+                    createPercentagePromotion(request);
+
+            case SCHEDULED ->
+                    createScheduledPromotion(request);
+
+            case COUPON ->
+                    createCouponPromotion(
+                            request,
+                            tenantId,
+                            excludedPromotionId
+                    );
         };
     }
 
     private PercentagePromotion createPercentagePromotion(
-        PromotionRequestDTO request
+            PromotionRequestDTO request
     ) {
-        BigDecimal discountPercentage = request.discountPercentage();
+        BigDecimal discountPercentage =
+                request.discountPercentage();
 
         if (discountPercentage == null
                 || discountPercentage.signum() <= 0
-                || discountPercentage.compareTo(new BigDecimal("100")) > 0) {
+                || discountPercentage.compareTo(
+                        new BigDecimal("100")
+                ) > 0) {
             throw new InvalidPromotionException(
-                "discountPercentage deve estar entre 0.01 e 100"
+                    "discountPercentage deve estar entre 0.01 e 100"
             );
         }
 
@@ -179,55 +262,73 @@ public class PromotionService {
                 || request.discountValue() != null
                 || request.couponCode() != null
                 || request.usageLimit() != null) {
-            throw incompatibleFields(PromotionType.PERCENTAGE);
+            throw incompatibleFields(
+                    PromotionType.PERCENTAGE
+            );
         }
 
-        PercentagePromotion promotion = new PercentagePromotion();
-        promotion.setDiscountPercentage(discountPercentage);
+        PercentagePromotion promotion =
+                new PercentagePromotion();
+
+        promotion.setDiscountPercentage(
+                discountPercentage
+        );
 
         return promotion;
     }
 
     private ScheduledPromotion createScheduledPromotion(
-        PromotionRequestDTO request
+            PromotionRequestDTO request
     ) {
         if (request.startDate() == null
                 || request.endDate() == null
                 || request.discountValue() == null) {
             throw new InvalidPromotionException(
-                "startDate, endDate e discountValue são obrigatórios "
-                    + "para promoções SCHEDULED"
+                    "startDate, endDate e discountValue são "
+                            + "obrigatórios para promoções SCHEDULED"
             );
         }
 
-        LocalDateTime startDate = normalizeDateTime(request.startDate());
-        LocalDateTime endDate = normalizeDateTime(request.endDate());
+        LocalDateTime startDate =
+                normalizeDateTime(request.startDate());
+
+        LocalDateTime endDate =
+                normalizeDateTime(request.endDate());
 
         if (!endDate.isAfter(startDate)) {
             throw new InvalidPromotionException(
-                "endDate deve ser posterior a startDate"
+                    "endDate deve ser posterior a startDate"
             );
         }
 
-        validatePositiveDiscount(request.discountValue());
+        validatePositiveDiscount(
+                request.discountValue()
+        );
 
         if (request.discountPercentage() != null
                 || request.couponCode() != null
                 || request.usageLimit() != null) {
-            throw incompatibleFields(PromotionType.SCHEDULED);
+            throw incompatibleFields(
+                    PromotionType.SCHEDULED
+            );
         }
 
-        ScheduledPromotion promotion = new ScheduledPromotion();
+        ScheduledPromotion promotion =
+                new ScheduledPromotion();
+
         promotion.setStartDate(startDate);
         promotion.setEndDate(endDate);
-        promotion.setDiscountValue(request.discountValue());
+        promotion.setDiscountValue(
+                request.discountValue()
+        );
 
         return promotion;
     }
 
     private CouponPromotion createCouponPromotion(
-        PromotionRequestDTO request,
-        Long tenantId
+            PromotionRequestDTO request,
+            Long tenantId,
+            Long excludedPromotionId
     ) {
         if (request.couponCode() == null
                 || request.couponCode().isBlank()
@@ -235,51 +336,138 @@ public class PromotionService {
                 || request.usageLimit() == null
                 || request.usageLimit() <= 0) {
             throw new InvalidPromotionException(
-                "couponCode, discountValue e usageLimit válidos são "
-                    + "obrigatórios para promoções COUPON"
+                    "couponCode, discountValue e usageLimit válidos "
+                            + "são obrigatórios para promoções COUPON"
             );
         }
 
-        validatePositiveDiscount(request.discountValue());
+        validatePositiveDiscount(
+                request.discountValue()
+        );
 
         if (request.discountPercentage() != null
                 || request.startDate() != null
                 || request.endDate() != null) {
-            throw incompatibleFields(PromotionType.COUPON);
-        }
-
-        String couponCode = normalizeCouponCode(request.couponCode());
-
-        if (couponCode.length() > 100) {
-            throw new InvalidPromotionException(
-                "couponCode não pode exceder 100 caracteres "
-                    + "após a normalização"
+            throw incompatibleFields(
+                    PromotionType.COUPON
             );
         }
 
-        if (promotionRepository.existsCouponCodeByTenantId(
-                tenantId,
-                couponCode
-        )) {
-            throw new CouponCodeAlreadyExistsException(couponCode);
+        String couponCode = normalizeCouponCode(
+                request.couponCode()
+        );
+
+        if (couponCode.length() > 100) {
+            throw new InvalidPromotionException(
+                    "couponCode não pode exceder 100 caracteres "
+                            + "após a normalização"
+            );
         }
 
-        CouponPromotion promotion = new CouponPromotion();
+        boolean couponCodeExists;
+
+        if (excludedPromotionId == null) {
+            couponCodeExists = promotionRepository
+                    .existsCouponCodeByTenantId(
+                            tenantId,
+                            couponCode
+                    );
+        } else {
+            couponCodeExists = promotionRepository
+                    .existsCouponCodeByTenantIdExcludingPromotionId(
+                            tenantId,
+                            excludedPromotionId,
+                            couponCode
+                    );
+        }
+
+        if (couponCodeExists) {
+            throw new CouponCodeAlreadyExistsException(
+                    couponCode
+            );
+        }
+
+        CouponPromotion promotion =
+                new CouponPromotion();
+
         promotion.setCouponCode(couponCode);
-        promotion.setDiscountValue(request.discountValue());
-        promotion.setUsageLimit(request.usageLimit());
+        promotion.setDiscountValue(
+                request.discountValue()
+        );
+        promotion.setUsageLimit(
+                request.usageLimit()
+        );
 
         return promotion;
     }
 
-    private Promotion savePromotion(Promotion promotion) {
+    private void copyTypeSpecificFields(
+            Promotion target,
+            Promotion source
+    ) {
+        switch (target.getPromotionType()) {
+            case PERCENTAGE -> {
+                PercentagePromotion targetPercentage =
+                        (PercentagePromotion) target;
+
+                PercentagePromotion sourcePercentage =
+                        (PercentagePromotion) source;
+
+                targetPercentage.setDiscountPercentage(
+                        sourcePercentage.getDiscountPercentage()
+                );
+            }
+
+            case SCHEDULED -> {
+                ScheduledPromotion targetScheduled =
+                        (ScheduledPromotion) target;
+
+                ScheduledPromotion sourceScheduled =
+                        (ScheduledPromotion) source;
+
+                targetScheduled.setStartDate(
+                        sourceScheduled.getStartDate()
+                );
+                targetScheduled.setEndDate(
+                        sourceScheduled.getEndDate()
+                );
+                targetScheduled.setDiscountValue(
+                        sourceScheduled.getDiscountValue()
+                );
+            }
+
+            case COUPON -> {
+                CouponPromotion targetCoupon =
+                        (CouponPromotion) target;
+
+                CouponPromotion sourceCoupon =
+                        (CouponPromotion) source;
+
+                targetCoupon.setCouponCode(
+                        sourceCoupon.getCouponCode()
+                );
+                targetCoupon.setDiscountValue(
+                        sourceCoupon.getDiscountValue()
+                );
+                targetCoupon.setUsageLimit(
+                        sourceCoupon.getUsageLimit()
+                );
+            }
+        }
+    }
+
+    private Promotion savePromotion(
+            Promotion promotion
+    ) {
         try {
-            return promotionRepository.saveAndFlush(promotion);
+            return promotionRepository
+                    .saveAndFlush(promotion);
         } catch (DataIntegrityViolationException exception) {
-            if (promotion instanceof CouponPromotion couponPromotion
+            if (promotion
+                    instanceof CouponPromotion couponPromotion
                     && isCouponCodeUniqueViolation(exception)) {
                 throw new CouponCodeAlreadyExistsException(
-                    couponPromotion.getCouponCode()
+                        couponPromotion.getCouponCode()
                 );
             }
 
@@ -287,13 +475,16 @@ public class PromotionService {
         }
     }
 
-    private boolean isCouponCodeUniqueViolation(Throwable exception) {
+    private boolean isCouponCodeUniqueViolation(
+            Throwable exception
+    ) {
         Throwable cause = exception;
 
         while (cause != null) {
-            if (cause instanceof ConstraintViolationException violation) {
+            if (cause
+                    instanceof ConstraintViolationException violation) {
                 return COUPON_CODE_UNIQUE_INDEX.equals(
-                    violation.getConstraintName()
+                        violation.getConstraintName()
                 );
             }
 
@@ -303,67 +494,79 @@ public class PromotionService {
         return false;
     }
 
-    private void validateCommonFields(PromotionRequestDTO request) {
+    private void validateCommonFields(
+            PromotionRequestDTO request
+    ) {
         if (request == null) {
             throw new InvalidPromotionException(
-                "Os dados da promoção são obrigatórios"
+                    "Os dados da promoção são obrigatórios"
             );
         }
 
-        if (request.name() == null || request.name().isBlank()) {
+        if (request.name() == null
+                || request.name().isBlank()) {
             throw new InvalidPromotionException(
-                "O nome da promoção é obrigatório"
+                    "O nome da promoção é obrigatório"
             );
         }
 
         if (request.active() == null) {
             throw new InvalidPromotionException(
-                "O estado da promoção é obrigatório"
+                    "O estado da promoção é obrigatório"
             );
         }
 
         if (request.promotionType() == null) {
             throw new InvalidPromotionException(
-                "O tipo da promoção é obrigatório"
+                    "O tipo da promoção é obrigatório"
             );
         }
-
     }
 
-    private void validatePositiveDiscount(BigDecimal discountValue) {
-        if (discountValue == null || discountValue.signum() <= 0) {
+    private void validatePositiveDiscount(
+            BigDecimal discountValue
+    ) {
+        if (discountValue == null
+                || discountValue.signum() <= 0) {
             throw new InvalidPromotionException(
-                "discountValue deve ser maior que zero"
+                    "discountValue deve ser maior que zero"
             );
         }
     }
 
     private InvalidPromotionException incompatibleFields(
-        PromotionType promotionType
+            PromotionType promotionType
     ) {
         return new InvalidPromotionException(
-            "Foram informados campos incompatíveis com o tipo "
-                + promotionType
+                "Foram informados campos incompatíveis com o tipo "
+                        + promotionType
         );
     }
 
-    private String normalizeCouponCode(String couponCode) {
+    private String normalizeCouponCode(
+            String couponCode
+    ) {
         return couponCode
-            .trim()
-            .toUpperCase(Locale.ROOT);
+                .trim()
+                .toUpperCase(Locale.ROOT);
     }
 
-    private LocalDateTime normalizeDateTime(LocalDateTime dateTime) {
-        return dateTime.truncatedTo(ChronoUnit.MICROS);
+    private LocalDateTime normalizeDateTime(
+            LocalDateTime dateTime
+    ) {
+        return dateTime.truncatedTo(
+                ChronoUnit.MICROS
+        );
     }
 
     private Tenant getAuthenticatedTenant() {
-        User authenticatedUser = authenticatedUserProvider
-            .getAuthenticatedUser();
+        User authenticatedUser =
+                authenticatedUserProvider
+                        .getAuthenticatedUser();
 
         if (authenticatedUser.getTenant() == null) {
             throw new AccessDeniedException(
-                "O usuário autenticado não possui Tenant."
+                    "O usuário autenticado não possui Tenant."
             );
         }
 

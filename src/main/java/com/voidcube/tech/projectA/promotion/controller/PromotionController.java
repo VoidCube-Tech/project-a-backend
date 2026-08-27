@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,58 +33,95 @@ public class PromotionController {
 
     @PostMapping
     public ResponseEntity<PromotionResponseDTO> create(
-        @Valid @RequestBody PromotionRequestDTO request
+            @Valid @RequestBody PromotionRequestDTO request
     ) {
-        PromotionResponseDTO created = promotionService.create(request);
+        PromotionResponseDTO created =
+                promotionService.create(request);
 
         return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(created);
+                .status(HttpStatus.CREATED)
+                .body(created);
     }
 
     @GetMapping
     public ResponseEntity<Page<PromotionResponseDTO>> findAll(
-        @PageableDefault(
-            size = 20,
-            sort = "id",
-            direction = Sort.Direction.DESC
-        ) Pageable pageable
+            @PageableDefault(
+                    size = 20,
+                    sort = "id",
+                    direction = Sort.Direction.DESC
+            )
+            Pageable pageable
     ) {
-        Page<PromotionResponseDTO> promotions = promotionService
-            .findAll(pageable);
+        Page<PromotionResponseDTO> promotions =
+                promotionService.findAll(pageable);
 
-        return ResponseEntity.ok(promotions);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(promotions);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PromotionResponseDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody PromotionRequestDTO request
+    ) {
+        PromotionResponseDTO updated =
+                promotionService.update(id, request);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(updated);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id
+    ) {
         promotionService.delete(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .build();
     }
 
-    @PostMapping("/{promotionId}/products/{productId}")
+    @PostMapping(
+            "/{promotionId}/products/{productId}"
+    )
     public ResponseEntity<Void> associateProduct(
-        @PathVariable Long productId,
-        @PathVariable Long promotionId
+            @PathVariable Long promotionId,
+            @PathVariable Long productId
     ) {
-        boolean associated = promotionService.associateProduct(promotionId, productId);
+        boolean associated =
+                promotionService.associateProduct(
+                        promotionId,
+                        productId
+                );
 
-        if(!associated) {
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        if (!associated) {
+            return ResponseEntity
+                    .status(HttpStatus.NO_CONTENT)
+                    .build();
         }
 
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .build();
     }
 
-    @DeleteMapping("/{promotionId}/products/{productId}")
+    @DeleteMapping(
+            "/{promotionId}/products/{productId}"
+    )
     public ResponseEntity<Void> disassociateProduct(
-        @PathVariable Long promotionId,
-        @PathVariable Long productId
+            @PathVariable Long promotionId,
+            @PathVariable Long productId
     ) {
-        promotionService.disassociateProduct(promotionId, productId);
+        promotionService.disassociateProduct(
+                promotionId,
+                productId
+        );
 
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .build();
     }
-    
 }

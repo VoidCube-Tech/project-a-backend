@@ -204,6 +204,11 @@ class ControllerRouteMappingTest {
                         PromotionController.class
                 ),
                 route(
+                        RequestMethod.PUT,
+                        "/api/v1/promotions/{id}",
+                        PromotionController.class
+                ),
+                route(
                         RequestMethod.DELETE,
                         "/api/v1/promotions/{id}",
                         PromotionController.class
@@ -218,7 +223,6 @@ class ControllerRouteMappingTest {
                         "/api/v1/promotions/{promotionId}/products/{productId}",
                         PromotionController.class
                 ),
-
                 route(
                         RequestMethod.GET,
                         "/api/v1/admin/tenants",
