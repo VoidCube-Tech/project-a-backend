@@ -5,6 +5,11 @@ spring:
   application:
     name: project-A
 
+  messages:
+    basename: messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
   servlet:
     multipart:
       max-file-size: 5MB
@@ -34,13 +39,8 @@ app:
   mail:
     from: no-reply@voidcube.tech
     verification-subject: "Confirme seu e-mail - Project A"
-    
+
   storage:
     images:
       max-size-bytes: 5242880
-  
-  messages:
-    basename: messages
-    enconding: UTF-8
-    fallback-to-system-locale: false
 
