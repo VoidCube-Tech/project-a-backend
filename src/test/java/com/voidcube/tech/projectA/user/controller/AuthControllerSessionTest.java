@@ -23,6 +23,7 @@ import com.voidcube.tech.projectA.shared.config.SecurityConfig;
 import com.voidcube.tech.projectA.shared.service.MessageService;
 import com.voidcube.tech.projectA.user.service.AuthService;
 
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -141,4 +142,33 @@ class AuthControllerSessionTest {
             return authentication.getName();
         }
     }
+
+    @Test
+        void deveRetornarMensagemTraduzidaAposVerificarEmail()
+        throws Exception {
+        when(
+            messageService.get(
+                    "auth.email-verification.success"
+            )
+        ).thenReturn(
+            "E-mail verificado com sucesso. Você já pode fazer login."
+        );
+
+        mockMvc.perform(
+                    get("/api/v1/auth/verify-email")
+                            .param("token", "token-valido")
+            )
+            .andExpect(status().isOk())
+            .andExpect(
+                    content().string(
+                            "E-mail verificado com sucesso. "
+                                    + "Você já pode fazer login."
+                    )
+            );
+
+        verify(authService).verifyEmail("token-valido");
+        verify(messageService).get(
+            "auth.email-verification.success"
+    );
+}
 }
