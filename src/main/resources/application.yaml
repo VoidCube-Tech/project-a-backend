@@ -22,9 +22,19 @@ app:
       max-pool-size: 4
       queue-capacity: 500
       await-termination-seconds: 30
+
+  analytics:
+    retention:
+      enabled: true
+      months: 12
+      batch-size: 1000
+      cron: "0 0 3 * * *"
+      zone: UTC
+
   mail:
     from: no-reply@voidcube.tech
     verification-subject: "Confirme seu e-mail - Project A"
+    
   storage:
     images:
       max-size-bytes: 5242880
