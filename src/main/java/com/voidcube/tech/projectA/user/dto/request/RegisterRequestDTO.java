@@ -15,7 +15,7 @@ public record RegisterRequestDTO(
     @Size(max = 255, message = "{validation.auth.email.size}") 
     String email,
 
-    @NotBlank(message = "{validation.auth.password.required") @Size(min = 8, max = 72, message = "{validation.auth.password.size}")
+    @NotBlank(message = "{validation.auth.password.required}") @Size(min = 8, max = 72, message = "{validation.auth.password.size}")
     @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!\\-_]).*$" , 
     message = "{validation.auth.password.pattern}")
     String password

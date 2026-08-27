@@ -30,7 +30,7 @@ public record ProductRequestDTO(
     @NotNull(message = "{validation.product.type.required}")
     ProductType productType,
 
-    @PositiveOrZero(message = "{validation.product.stock.non-negative}}")
+    @PositiveOrZero(message = "{validation.product.stock.non-negative}")
     Integer stockQuantity,
 
     List<@NotBlank(message = "{validation.product.tag.name.required}")@Size(max = 255, message = "{validation.product.tag.name.size}") 

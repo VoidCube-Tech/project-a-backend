@@ -12,7 +12,7 @@ public record LandingPageRequestDTO(
     @NotBlank(message = "{validation.landing-page.domain.required}")
     @Size(max = 255, message = "{validation.landing-page.domain.size}")
     @Pattern(regexp = "^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$",
-        message = "validation.landing-page.domain.pattern}")
+        message = "{validation.landing-page.domain.pattern}")
     String domainUrl,
 
     @Size(max = 30, message = "{validation.landing-page.whatsapp.size}")
