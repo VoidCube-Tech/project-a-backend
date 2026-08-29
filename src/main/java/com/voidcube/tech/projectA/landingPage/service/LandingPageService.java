@@ -1,5 +1,6 @@
 package com.voidcube.tech.projectA.landingpage.service;
 
+import java.util.ArrayList;
 import java.util.Locale;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -63,7 +64,7 @@ public class LandingPageService {
     public Page<LandingPageResponseDTO> findAll(Pageable pageable) {
         Tenant tenant = getAuthenticatedTenant();
 
-        return landingPageRepository.findAllByTenant_id(tenant.getId(), pageable).map(LandingPageResponseDTO::from);
+        return landingPageRepository.findAllByTenant_Id(tenant.getId(), pageable).map(LandingPageResponseDTO::from);
     }
 
     @Transactional
@@ -86,6 +87,25 @@ public class LandingPageService {
         auditLogService.register("LANDING_PAGE_UPDATE", "LandingPage", savedLandingPage.getId().toString());
 
         return LandingPageResponseDTO.from(savedLandingPage);
+    }
+
+    @Transactional
+    public void delete(Long landingPageId) {
+        Tenant tenant = getAuthenticatedTenant();
+
+        LandingPage landingPage = findLandingPage(landingPageId, tenant.getId());
+
+        new ArrayList<>(landingPage.getProducts())
+            .forEach(landingPage::removeProduct);
+
+        landingPageRepository.delete(landingPage);
+        landingPageRepository.flush();
+
+        auditLogService.register(
+            "LANDING_PAGE_DELETE",
+            "LandingPage",
+            landingPageId.toString()
+        );
     }
 
     private void validateDomainForCreation(String domainUrl) {

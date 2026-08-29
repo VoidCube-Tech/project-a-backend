@@ -124,7 +124,7 @@ class LandingPageServiceTest {
                 .thenReturn(admin);
 
         when(landingPageRepository
-                .findAllByTenant_id(
+                .findAllByTenant_Id(
                         10L,
                         pageable
                 ))
@@ -298,6 +298,76 @@ class LandingPageServiceTest {
         verify(landingPageRepository, never())
                 .saveAndFlush(any(LandingPage.class));
         verify(auditLogService, never()).register(any(), any(), any());
+    }
+
+        @Test
+    void deveExcluirpZEAWYtiB6bJ16NuLbGCc6CZ6jJdKfb63() {
+        Tenant tenant = createTenant(10L);
+        LandingPage landingPage = createLandingPage(20L, tenant);
+
+        Product firstProduct = createProduct(30L, tenant);
+        Product secondProduct = createProduct(31L, tenant);
+
+        landingPage.addProduct(firstProduct);
+        landingPage.addProduct(secondProduct);
+
+        when(authenticatedUserProvider
+            .getAuthenticatedUser())
+            .thenReturn(createAdmin(tenant));
+
+        when(landingPageRepository
+            .findByIdAndTenant_Id(20L, 10L))
+            .thenReturn(Optional.of(landingPage));
+
+        landingPageService.delete(20L);
+
+        assertTrue(landingPage.getProducts().isEmpty());
+
+        assertFalse(firstProduct
+                    .getLandingPages()
+                    .contains(landingPage)
+        );
+        assertFalse(secondProduct
+                    .getLandingPages()
+                    .contains(landingPage)
+        );
+        verify(landingPageRepository).delete(landingPage);
+
+        verify(landingPageRepository).flush();
+
+        verify(auditLogService).register(
+            "LANDING_PAGE_DELETE",
+            "LandingPage",
+            "20"
+        );
+    }
+        @Test
+     void naoDeveExcluirLandingPageDeOutroTenant() {
+        Tenant tenant = createTenant(10L);
+
+        when(authenticatedUserProvider
+            .getAuthenticatedUser())
+            .thenReturn(createAdmin(tenant));
+
+        when(landingPageRepository
+            .findByIdAndTenant_Id(99L, 10L))
+            .thenReturn(Optional.empty());
+
+        assertThrows(LandingPageNotFoundException.class,
+            () -> landingPageService.delete(99L)
+        );
+
+        verify(landingPageRepository)
+            .findByIdAndTenant_Id(99L, 10L);
+
+        verify(landingPageRepository, never())
+            .delete(any(LandingPage.class));
+
+        verify(landingPageRepository, never())
+            .flush();
+
+        verify(auditLogService, never())
+            .register(any(), any(), any());
     }
 
     private LandingPage createLandingPage(Long id, Tenant tenant) {

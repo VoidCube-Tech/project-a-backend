@@ -2,6 +2,7 @@ package com.voidcube.tech.projectA.landingpage.controller;
 
 import com.voidcube.tech.projectA.landingpage.service.LandingPageService;
 import com.voidcube.tech.projectA.shared.exception.GlobalExceptionHandler;
+import com.voidcube.tech.projectA.shared.exception.LandingPageNotFoundException;
 import com.voidcube.tech.projectA.shared.exception.ProductNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,5 +102,25 @@ class LandingPageControllerTest {
         ).andExpect(status().isNoContent());
 
         verify(landingPageService).disassociateProduct(10L, 20L);
+    }
+
+    @Test
+    void deveExcluirLandingPage() throws Exception {
+        mockMvc.perform(delete("/api/v1/landing-pages/10"))
+                .andExpect(status().isNoContent());
+
+        verify(landingPageService).delete(10L);
+    }
+
+    @Test
+    void deveRetornarNotFoundQuandoLandingPageNaoexiste() throws Exception {
+        doThrow(new LandingPageNotFoundException(10L))
+                .when(landingPageService)
+                .delete(10L);
+
+        mockMvc.perform(delete("/api/v1/landing-pages/10"))
+                .andExpect(status().isNotFound());
+
+        verify(landingPageService).delete(10L);
     }
 }

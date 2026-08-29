@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/v1/landing-pages")
+@RequestMapping("/api/v1/landing-pages")
 @PreAuthorize("hasRole('ADMIN')")
 public class LandingPageController {
     
@@ -58,6 +58,13 @@ public class LandingPageController {
         return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        landingPageService.delete(id);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
     @PostMapping("/{pageId}/products/{productId}")
     public ResponseEntity<Void> associateProduct(
         @PathVariable Long pageId,
@@ -79,6 +86,6 @@ public class LandingPageController {
     ) {
         landingPageService.disassociateProduct(pageId, productId);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

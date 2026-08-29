@@ -12,7 +12,7 @@ import com.voidcube.tech.projectA.landingpage.model.LandingPage;
 
 public interface LandingPageRepository extends JpaRepository<LandingPage, Long> {
     
-    Page <LandingPage> findAllByTenant_id(Long tenantId,  Pageable pageable);
+    Page <LandingPage> findAllByTenant_Id(Long tenantId,  Pageable pageable);
 
     Optional<LandingPage> findByIdAndTenant_Id(Long landingPageId, Long tenantId);
 

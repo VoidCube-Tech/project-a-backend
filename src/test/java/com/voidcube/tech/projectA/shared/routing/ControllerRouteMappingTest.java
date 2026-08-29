@@ -120,6 +120,11 @@ class ControllerRouteMappingTest {
                         LandingPageController.class
                 ),
                 route(
+                        RequestMethod.DELETE,
+                        "/api/v1/landing-pages/{id}",
+                        LandingPageController.class
+                ),
+                route(
                         RequestMethod.POST,
                         "/api/v1/landing-pages/{pageId}/products/{productId}",
                         LandingPageController.class
