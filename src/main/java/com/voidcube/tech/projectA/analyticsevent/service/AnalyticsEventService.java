@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.voidcube.tech.projectA.analyticsevent.dto.request.AnalyticsEventRequestDTO;
 import com.voidcube.tech.projectA.analyticsevent.model.AnalyticsEvent;
+import com.voidcube.tech.projectA.analyticsevent.model.EventType;
 import com.voidcube.tech.projectA.analyticsevent.repository.AnalyticsEventRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -20,11 +21,21 @@ public class AnalyticsEventService {
     @Async("analyticsTaskExecutor")
     @Transactional
     public void saveAsync(AnalyticsEventRequestDTO request) {
+       save(request.landingPageId(), request.productId(), request.eventType());
+    }
+
+    @Async("analyticsTaskExecutor")
+    @Transactional
+    public void saveWhatsappClickAsync(Long landingPageId, Long productId) {
+        save(landingPageId, productId, EventType.WHATSAPP_CLICK);
+    }
+
+    private void save(Long landingPageId, Long productId, EventType eventType) {
         AnalyticsEvent event = new AnalyticsEvent();
 
-        event.setLandingPageId(request.landingPageId());
-        event.setProductId(request.productId());
-        event.setEventType(request.eventType());
+        event.setLandingPageId(landingPageId);
+        event.setProductId(productId);
+        event.setEventType(eventType);
 
         analyticsEventRepository.save(event);
     }

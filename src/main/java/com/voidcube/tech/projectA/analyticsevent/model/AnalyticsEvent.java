@@ -34,7 +34,7 @@ public class AnalyticsEvent {
     @Column(name = "landing_page_id", nullable = false)
     private Long landingPageId;
 
-    @Column(name = "product_id", nullable = false)
+    @Column(name = "product_id")
     private Long productId;
 
     @CreationTimestamp

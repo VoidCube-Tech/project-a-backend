@@ -1,9 +1,7 @@
 package com.voidcube.tech.projectA.analyticsevent.service;
 
-import com.voidcube.tech.projectA.analyticsevent.dto.request.AnalyticsEventRequestDTO;
-import com.voidcube.tech.projectA.analyticsevent.model.AnalyticsEvent;
-import com.voidcube.tech.projectA.analyticsevent.model.EventType;
-import com.voidcube.tech.projectA.analyticsevent.repository.AnalyticsEventRepository;
+import java.lang.reflect.Method;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -12,7 +10,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.scheduling.annotation.Async;
 
-import java.lang.reflect.Method;
+import com.voidcube.tech.projectA.analyticsevent.dto.request.AnalyticsEventRequestDTO;
+import com.voidcube.tech.projectA.analyticsevent.model.AnalyticsEvent;
+import com.voidcube.tech.projectA.analyticsevent.model.EventType;
+import com.voidcube.tech.projectA.analyticsevent.repository.AnalyticsEventRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -21,60 +22,60 @@ import static org.mockito.Mockito.verify;
 class AnalyticsEventServiceTest {
 
     @Mock
-    private AnalyticsEventRepository
-            analyticsEventRepository;
+    private AnalyticsEventRepository analyticsEventRepository;
 
     @InjectMocks
-    private AnalyticsEventService
-            analyticsEventService;
+    private AnalyticsEventService analyticsEventService;
 
     @Test
     void shouldSaveAnalyticsEvent() {
         AnalyticsEventRequestDTO request =
-                new AnalyticsEventRequestDTO(
-                        1L,
-                        15L,
-                        EventType.VIEW
-                );
+                new AnalyticsEventRequestDTO(1L, 15L, EventType.VIEW);
 
         analyticsEventService.saveAsync(request);
 
-        ArgumentCaptor<AnalyticsEvent> captor =
-                ArgumentCaptor.forClass(
-                        AnalyticsEvent.class
-                );
+        AnalyticsEvent savedEvent = captureSavedEvent();
 
-        verify(analyticsEventRepository)
-                .save(captor.capture());
-
-        AnalyticsEvent savedEvent =
-                captor.getValue();
-
-        assertThat(savedEvent.getLandingPageId())
-                .isEqualTo(1L);
-
-        assertThat(savedEvent.getProductId())
-                .isEqualTo(15L);
-
-        assertThat(savedEvent.getEventType())
-                .isEqualTo(EventType.VIEW);
+        assertThat(savedEvent.getLandingPageId()).isEqualTo(1L);
+        assertThat(savedEvent.getProductId()).isEqualTo(15L);
+        assertThat(savedEvent.getEventType()).isEqualTo(EventType.VIEW);
     }
 
     @Test
-    void saveMethodShouldBeAsync()
-            throws NoSuchMethodException {
+    void shouldSaveWhatsappClickWithoutProduct() {
+        analyticsEventService.saveWhatsappClickAsync(1L, null);
 
-        Method method =
-                AnalyticsEventService.class
-                        .getMethod(
-                                "saveAsync",
-                                AnalyticsEventRequestDTO.class
-                        );
+        AnalyticsEvent savedEvent = captureSavedEvent();
 
-        assertThat(
-                method.isAnnotationPresent(
-                        Async.class
-                )
-        ).isTrue();
+        assertThat(savedEvent.getLandingPageId()).isEqualTo(1L);
+        assertThat(savedEvent.getProductId()).isNull();
+        assertThat(savedEvent.getEventType())
+                .isEqualTo(EventType.WHATSAPP_CLICK);
+    }
+
+    @Test
+    void saveMethodsShouldBeAsync() throws NoSuchMethodException {
+        Method saveMethod = AnalyticsEventService.class.getMethod(
+                "saveAsync",
+                AnalyticsEventRequestDTO.class
+        );
+
+        Method whatsappMethod = AnalyticsEventService.class.getMethod(
+                "saveWhatsappClickAsync",
+                Long.class,
+                Long.class
+        );
+
+        assertThat(saveMethod.isAnnotationPresent(Async.class)).isTrue();
+        assertThat(whatsappMethod.isAnnotationPresent(Async.class)).isTrue();
+    }
+
+    private AnalyticsEvent captureSavedEvent() {
+        ArgumentCaptor<AnalyticsEvent> captor =
+                ArgumentCaptor.forClass(AnalyticsEvent.class);
+
+        verify(analyticsEventRepository).save(captor.capture());
+
+        return captor.getValue();
     }
 }

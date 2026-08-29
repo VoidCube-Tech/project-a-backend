@@ -124,6 +124,17 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(WhatsappNotConfiguredException.class)
+    public ResponseEntity<ApiErrorResponse> handleWhatsappNotConfigured(
+        WhatsappNotConfiguredException e, 
+        HttpServletRequest request) {
+                return buildResponse(
+                        HttpStatus.UNPROCESSABLE_CONTENT,
+                        e.getMessage(),
+                        request
+                );
+        }
+
     @ExceptionHandler(ImageStorageException.class)
     public ResponseEntity<ApiErrorResponse>
     handleImageStorage(

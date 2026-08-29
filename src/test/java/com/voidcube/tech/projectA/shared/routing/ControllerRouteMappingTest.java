@@ -85,25 +85,21 @@ class ControllerRouteMappingTest {
                         "/api/v1/public/analytics/events",
                         AnalyticsEventController.class
                 ),
-
                 route(
                         RequestMethod.GET,
                         "/api/v1/admin/audit",
                         AuditLogController.class
                 ),
-
                 route(
                         RequestMethod.GET,
                         "/api/v1/dashboard/metrics",
                         DashboardMetricsController.class
                 ),
-
                 route(
                         RequestMethod.GET,
                         "/api/v1/export/products",
                         ProductExportController.class
                 ),
-
                 route(
                         RequestMethod.POST,
                         "/api/v1/landing-pages",
@@ -134,13 +130,16 @@ class ControllerRouteMappingTest {
                         "/api/v1/landing-pages/{pageId}/products/{productId}",
                         LandingPageController.class
                 ),
-
                 route(
                         RequestMethod.GET,
                         "/api/v1/public/landing-pages/{domainUrl}",
                         PublicLandingPageController.class
                 ),
-
+                route(
+                        RequestMethod.GET,
+                        "/api/v1/public/landing-pages/{domainUrl}/whatsapp",
+                        PublicLandingPageController.class
+                ),
                 route(
                         RequestMethod.POST,
                         "/api/v1/products",
@@ -166,7 +165,6 @@ class ControllerRouteMappingTest {
                         "/api/v1/products/{id}",
                         ProductController.class
                 ),
-
                 route(
                         RequestMethod.POST,
                         "/api/v1/products/{productId}/images",
@@ -197,7 +195,6 @@ class ControllerRouteMappingTest {
                         "/api/v1/public/product-images/{imageId}/file",
                         PublicProductImageFileController.class
                 ),
-
                 route(
                         RequestMethod.POST,
                         "/api/v1/promotions",
