@@ -21,6 +21,7 @@ import com.voidcube.tech.projectA.product.controller.ProductImageController;
 import com.voidcube.tech.projectA.product.controller.ProductImageFileController;
 import com.voidcube.tech.projectA.product.controller.PublicProductImageFileController;
 import com.voidcube.tech.projectA.promotion.controller.PromotionController;
+import com.voidcube.tech.projectA.sale.controller.SaleController;
 import com.voidcube.tech.projectA.tenant.controller.AdminTenantController;
 import com.voidcube.tech.projectA.user.controller.AuthController;
 
@@ -255,7 +256,27 @@ class ControllerRouteMappingTest {
                         RequestMethod.GET,
                         "/api/v1/auth/verify-email",
                         AuthController.class
-                )
+                ),
+                route(
+                        RequestMethod.POST,
+                        "/api/v1/sales",
+                        SaleController.class
+                ),
+                route(
+                        RequestMethod.GET,
+                        "/api/v1/sales",
+                        SaleController.class
+                ),
+                route(
+                        RequestMethod.GET,
+                        "/api/v1/sales/{id}",
+                        SaleController.class
+                ),
+                route(
+                        RequestMethod.POST,
+                        "/api/v1/sales/{id}/cancel",
+                        SaleController.class
+                )     
         );
     }
 
