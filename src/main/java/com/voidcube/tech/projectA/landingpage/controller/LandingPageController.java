@@ -27,65 +27,57 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/landing-pages")
 @PreAuthorize("hasRole('ADMIN')")
 public class LandingPageController {
-    
+
     private final LandingPageService landingPageService;
 
     @PostMapping
     public ResponseEntity<LandingPageResponseDTO> createLandingPage(
-        @Valid @RequestBody LandingPageRequestDTO request
+            @Valid @RequestBody LandingPageRequestDTO request
     ) {
-        LandingPageResponseDTO responseDTO = landingPageService.create(request);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
+        LandingPageResponseDTO response = landingPageService.create(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
     public ResponseEntity<Page<LandingPageResponseDTO>> listLandingPages(
-        @PageableDefault(size = 20, sort = "id") Pageable pageable
+            @PageableDefault(size = 20, sort = "id") Pageable pageable
     ) {
-        Page<LandingPageResponseDTO> responseDTO = landingPageService.findAll(pageable);
-
-        return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
+        Page<LandingPageResponseDTO> response = landingPageService.findAll(pageable);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<LandingPageResponseDTO> updateLandingPage(
-        @PathVariable("id") Long id,
-        @Valid @RequestBody LandingPageRequestDTO requestDTO
+            @PathVariable Long id,
+            @Valid @RequestBody LandingPageRequestDTO request
     ) {
-        LandingPageResponseDTO responseDTO = landingPageService.update(id, requestDTO);
-
-        return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
+        LandingPageResponseDTO response = landingPageService.update(id, request);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         landingPageService.delete(id);
-
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @PostMapping("/{pageId}/products/{productId}")
     public ResponseEntity<Void> associateProduct(
-        @PathVariable Long pageId,
-        @PathVariable Long productId
+            @PathVariable Long pageId,
+            @PathVariable Long productId
     ) {
-        boolean created = landingPageService.associateProduct(pageId, productId);
+        boolean associated = landingPageService.associateProduct(pageId, productId);
+        HttpStatus status = associated ? HttpStatus.CREATED : HttpStatus.NO_CONTENT;
 
-        if (!created) {
-            return ResponseEntity.noContent().build();
-        }
-
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(status).build();
     }
 
     @DeleteMapping("/{pageId}/products/{productId}")
     public ResponseEntity<Void> disassociateProduct(
-        @PathVariable Long pageId,
-        @PathVariable Long productId
+            @PathVariable Long pageId,
+            @PathVariable Long productId
     ) {
         landingPageService.disassociateProduct(pageId, productId);
-
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

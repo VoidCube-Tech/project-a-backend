@@ -4,18 +4,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record ApiErrorResponse(
-    LocalDateTime timestamp,
-    int status,
-    String error,
-    String message,
-    String path,
-    List<FieldValidationErrorResponse> fieldErrors
+        LocalDateTime timestamp,
+        int status,
+        String error,
+        String message,
+        String path,
+        List<FieldValidationErrorResponse> fieldErrors
 ) {
 
-    public ApiErrorResponse{
-        fieldErrors = fieldErrors == null
-            ?List.of()
-            :List.copyOf(fieldErrors);
+    public ApiErrorResponse {
+        fieldErrors = fieldErrors == null ? List.of() : List.copyOf(fieldErrors);
     }
-    
 }

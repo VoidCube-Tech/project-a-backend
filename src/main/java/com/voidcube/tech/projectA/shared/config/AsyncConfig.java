@@ -20,10 +20,10 @@ public class AsyncConfig {
         @Value("${app.async.analytics.max-pool-size:4}")
         int maxPoolSize,
 
-        @Value("${aap.async.analytics.queue.capacity:500}")
+        @Value("${app.async.analytics.queue.capacity:500}")
         int queueCapacity,
 
-        @Value("${app.async.analytics.await.termination-seconds:30}")
+        @Value("${app.async.analytics.await-termination-seconds:30}")
         int awaitTerminationSeconds
     ) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

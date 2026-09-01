@@ -1,6 +1,5 @@
 package com.voidcube.tech.projectA.export.controller;
 
-
 import java.util.List;
 import java.util.Locale;
 
@@ -23,65 +22,66 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/v1/export/products")
+@RequestMapping("/api/v1/export/products")
 @PreAuthorize("hasRole('ADMIN')")
 public class ProductExportController {
-    
+
     private final ProductExportService productExportService;
 
     @GetMapping
     public ResponseEntity<?> export(@RequestParam String formato) {
         String normalizedFormat = normalizeFormat(formato);
-
         List<ProductExportDTO> products = productExportService.findAll();
 
-        if(normalizedFormat.equals("json")) {
-            return buildJsonResponse(products);
-        }
-        return buildCsvResponse(products);
+        return normalizedFormat.equals("json")
+                ? buildJsonResponse(products)
+                : buildCsvResponse(products);
     }
 
-    private ResponseEntity<List<ProductExportDTO>> buildJsonResponse(List<ProductExportDTO> products) {
-        String contentDisposition = ContentDisposition
-            .attachment()
-            .filename("products.json")
-            .build()
-            .toString();
+    private ResponseEntity<List<ProductExportDTO>> buildJsonResponse(
+            List<ProductExportDTO> products
+    ) {
+        String contentDisposition = ContentDisposition.attachment()
+                .filename("products.json")
+                .build()
+                .toString();
 
-            return ResponseEntity.status(HttpStatus.OK)
+        return ResponseEntity.status(HttpStatus.OK)
                 .contentType(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
                 .body(products);
     }
 
-    public ResponseEntity<byte[]> buildCsvResponse(List<ProductExportDTO> products) {
+    private ResponseEntity<byte[]> buildCsvResponse(
+            List<ProductExportDTO> products
+    ) {
         byte[] csv = productExportService.generateCsv(products);
 
-        String contentDisposition = ContentDisposition
-            .attachment()
-            .filename("products.csv")
-            .build()
-            .toString();
+        String contentDisposition = ContentDisposition.attachment()
+                .filename("products.csv")
+                .build()
+                .toString();
 
-        MediaType csvMediaType = MediaType.parseMediaType("text/csv;charset=UTF-8");
+        MediaType csvMediaType =
+                MediaType.parseMediaType("text/csv;charset=UTF-8");
 
         return ResponseEntity.status(HttpStatus.OK)
-            .contentType(csvMediaType)
-            .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
-            .body(csv);
+                .contentType(csvMediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
+                .body(csv);
     }
 
     private String normalizeFormat(String format) {
-        if(format == null) {
+        if (format == null) {
             throw new InvalidExportFormatException(null);
         }
 
         String normalized = format.trim().toLowerCase(Locale.ROOT);
 
-        if(!normalized.equals("json") && !normalized.equals("csv")) {
+        if (!normalized.equals("json") && !normalized.equals("csv")) {
             throw new InvalidExportFormatException(format);
         }
-        
+
         return normalized;
     }
 }

@@ -41,3 +41,8 @@ out/
 
 ### requirements ###
 requisitos.md
+
+### Enviroment ###
+.env
+.env.*
+!.env.example

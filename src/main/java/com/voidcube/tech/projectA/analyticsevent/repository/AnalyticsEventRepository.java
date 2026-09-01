@@ -14,18 +14,19 @@ import com.voidcube.tech.projectA.analyticsevent.model.AnalyticsEvent;
 import com.voidcube.tech.projectA.analyticsevent.projection.AnalyticsEventCountProjection;
 
 public interface AnalyticsEventRepository extends JpaRepository<AnalyticsEvent, Long> {
-    
+
     @Query("""
             SELECT event.productId AS productId,
-            event.eventType AS eventType,
-            COUNT(event.id) AS eventCount
-            FROM AnalyticsEvent event WHERE event.productId IN :productIds
-            GROUP BY
-                event.productId,
-                event.eventType
-                ORDER BY COUNT(event.id) DESC
+                   event.eventType AS eventType,
+                   COUNT(event.id) AS eventCount
+            FROM AnalyticsEvent event
+            WHERE event.productId IN :productIds
+            GROUP BY event.productId, event.eventType
+            ORDER BY COUNT(event.id) DESC
             """)
-            List<AnalyticsEventCountProjection> countEventsByProductIds(@Param("productIds") Collection<Long> productIds);
+    List<AnalyticsEventCountProjection> countEventsByProductIds(
+            @Param("productIds") Collection<Long> productIds
+    );
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Transactional
@@ -37,11 +38,10 @@ public interface AnalyticsEventRepository extends JpaRepository<AnalyticsEvent, 
                 WHERE created_at < :cutoff
                 ORDER BY id
                 LIMIT :batchSize
-                )
+            )
             """, nativeQuery = true)
     int deleteBatchCreatedBefore(
-        @Param("cutoff") LocalDateTime cutoff,
-        @Param("batchSize") int batchsize
+            @Param("cutoff") LocalDateTime cutoff,
+            @Param("batchSize") int batchSize
     );
-
 }

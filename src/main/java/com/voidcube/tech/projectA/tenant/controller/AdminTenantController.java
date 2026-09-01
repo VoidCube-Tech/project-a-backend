@@ -20,23 +20,25 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("api/v1/admin/tenants")
 @RequiredArgsConstructor
+@RequestMapping("/api/v1/admin/tenants")
+@PreAuthorize("hasRole('SUPER_ADMIN')")
 public class AdminTenantController {
-    
+
     private final AdminTenantService adminTenantService;
 
     @GetMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public List<TenantResponse> findAll() {
-        return adminTenantService.findAll();
+    public ResponseEntity<List<TenantResponse>> findAll() {
+        List<TenantResponse> response = adminTenantService.findAll();
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PutMapping("/{tenantId}/plan")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<Void> updatePlan(@PathVariable Long tenantId, @Valid @RequestBody UpdateTenantPlanRequest request) {
+    public ResponseEntity<Void> updatePlan(
+            @PathVariable Long tenantId,
+            @Valid @RequestBody UpdateTenantPlanRequest request
+    ) {
         adminTenantService.updatePlan(tenantId, request.planId());
-
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

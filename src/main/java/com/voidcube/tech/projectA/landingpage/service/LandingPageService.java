@@ -30,7 +30,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class LandingPageService {
-    
+
     private final LandingPageRepository landingPageRepository;
     private final AuthenticatedUserProvider authenticatedUserProvider;
     private final AuditLogService auditLogService;
@@ -39,41 +39,42 @@ public class LandingPageService {
     @Transactional
     public LandingPageResponseDTO create(LandingPageRequestDTO request) {
         Tenant tenant = getAuthenticatedTenant();
-
         String normalizedDomain = normalizeDomain(request.domainUrl());
 
         validateDomainForCreation(normalizedDomain);
 
         LandingPage landingPage = new LandingPage();
-
         landingPage.setName(request.name().trim());
         landingPage.setDomainUrl(normalizedDomain);
         landingPage.setWhatsappNumber(normalizeWhatsapp(request.whatsappNumber()));
-
         landingPage.setTenant(tenant);
 
         LandingPage savedLandingPage = saveLandingPage(landingPage);
 
-        auditLogService.register("LANDING_PAGE_CREATE", "LandingPage", savedLandingPage.getId().toString());
+        auditLogService.register(
+                "LANDING_PAGE_CREATE",
+                "LandingPage",
+                savedLandingPage.getId().toString()
+        );
 
         return LandingPageResponseDTO.from(savedLandingPage);
-
     }
 
     @Transactional(readOnly = true)
     public Page<LandingPageResponseDTO> findAll(Pageable pageable) {
-        Tenant tenant = getAuthenticatedTenant();
+        Long tenantId = getAuthenticatedTenant().getId();
 
-        return landingPageRepository.findAllByTenant_Id(tenant.getId(), pageable).map(LandingPageResponseDTO::from);
+        return landingPageRepository.findAllByTenant_Id(tenantId, pageable)
+                .map(LandingPageResponseDTO::from);
     }
 
     @Transactional
-    public LandingPageResponseDTO update(Long landingPageId, LandingPageRequestDTO request) {
+    public LandingPageResponseDTO update(
+            Long landingPageId,
+            LandingPageRequestDTO request
+    ) {
         Tenant tenant = getAuthenticatedTenant();
-
-        LandingPage landingPage = landingPageRepository.findByIdAndTenant_Id(landingPageId, tenant.getId())
-            .orElseThrow(()-> new LandingPageNotFoundException(landingPageId));
-        
+        LandingPage landingPage = findLandingPage(landingPageId, tenant.getId());
         String normalizedDomain = normalizeDomain(request.domainUrl());
 
         validateDomainForUpdate(normalizedDomain, landingPageId);
@@ -84,7 +85,11 @@ public class LandingPageService {
 
         LandingPage savedLandingPage = saveLandingPage(landingPage);
 
-        auditLogService.register("LANDING_PAGE_UPDATE", "LandingPage", savedLandingPage.getId().toString());
+        auditLogService.register(
+                "LANDING_PAGE_UPDATE",
+                "LandingPage",
+                savedLandingPage.getId().toString()
+        );
 
         return LandingPageResponseDTO.from(savedLandingPage);
     }
@@ -92,54 +97,90 @@ public class LandingPageService {
     @Transactional
     public void delete(Long landingPageId) {
         Tenant tenant = getAuthenticatedTenant();
-
         LandingPage landingPage = findLandingPage(landingPageId, tenant.getId());
 
-        new ArrayList<>(landingPage.getProducts())
-            .forEach(landingPage::removeProduct);
+        new ArrayList<>(landingPage.getProducts()).forEach(landingPage::removeProduct);
 
         landingPageRepository.delete(landingPage);
         landingPageRepository.flush();
 
         auditLogService.register(
-            "LANDING_PAGE_DELETE",
-            "LandingPage",
-            landingPageId.toString()
+                "LANDING_PAGE_DELETE",
+                "LandingPage",
+                landingPageId.toString()
         );
     }
 
-    private void validateDomainForCreation(String domainUrl) {
-        boolean domainAlreadyExists = landingPageRepository.existsByDomainUrlIgnoreCase(domainUrl);
+    @Transactional
+    public boolean associateProduct(Long pageId, Long productId) {
+        Tenant tenant = getAuthenticatedTenant();
+        LandingPage landingPage = findLandingPage(pageId, tenant.getId());
+        Product product = findProduct(productId, tenant.getId());
 
-        if(domainAlreadyExists) {
+        if (!landingPage.addProduct(product)) {
+            return false;
+        }
+
+        landingPageRepository.saveAndFlush(landingPage);
+        auditLogService.register(
+                "LANDING_PAGE_PRODUCT_ASSOCIATE",
+                "LandingPageProduct",
+                pageId + ":" + productId
+        );
+
+        return true;
+    }
+
+    @Transactional
+    public boolean disassociateProduct(Long pageId, Long productId) {
+        Tenant tenant = getAuthenticatedTenant();
+        LandingPage landingPage = findLandingPage(pageId, tenant.getId());
+        Product product = findProduct(productId, tenant.getId());
+
+        if (!landingPage.removeProduct(product)) {
+            return false;
+        }
+
+        landingPageRepository.saveAndFlush(landingPage);
+        auditLogService.register(
+                "LANDING_PAGE_PRODUCT_DISASSOCIATE",
+                "LandingPageProduct",
+                pageId + ":" + productId
+        );
+
+        return true;
+    }
+
+    private void validateDomainForCreation(String domainUrl) {
+        if (landingPageRepository.existsByDomainUrlIgnoreCase(domainUrl)) {
             throw new DomainUrlAlreadyException(domainUrl);
         }
     }
 
     private void validateDomainForUpdate(String domainUrl, Long landingPageId) {
-        boolean usedByAnotherLandingPage = landingPageRepository.existsByDomainUrlIgnoreCaseAndIdNot(domainUrl, landingPageId);
+        boolean usedByAnotherPage =
+                landingPageRepository.existsByDomainUrlIgnoreCaseAndIdNot(
+                        domainUrl,
+                        landingPageId
+                );
 
-        if(usedByAnotherLandingPage) {
+        if (usedByAnotherPage) {
             throw new DomainUrlAlreadyException(domainUrl);
         }
     }
 
-    private String normalizeDomain(String domainUrl) {
-        return domainUrl
-            .trim()
-            .toLowerCase(Locale.ROOT);
-    }
-
     private LandingPage saveLandingPage(LandingPage landingPage) {
-        try{
-            
+        try {
             return landingPageRepository.saveAndFlush(landingPage);
-            
         } catch (DataIntegrityViolationException exception) {
-            
             throw new DomainUrlAlreadyException(landingPage.getDomainUrl());
         }
     }
+
+    private String normalizeDomain(String domainUrl) {
+        return domainUrl.trim().toLowerCase(Locale.ROOT);
+    }
+
     private String normalizeWhatsapp(String whatsappNumber) {
         if (whatsappNumber == null || whatsappNumber.isBlank()) {
             return null;
@@ -148,114 +189,33 @@ public class LandingPageService {
         String digitsOnly = whatsappNumber.replaceAll("\\D", "");
 
         if (digitsOnly.length() < 8 || digitsOnly.length() > 15) {
-            throw new InvalidPageException("O número do whatsapp deve possuir entre 8 a 15 dígitos");
+            throw new InvalidPageException(
+                    "O número do WhatsApp deve possuir entre 8 e 15 dígitos."
+            );
         }
 
         return digitsOnly;
     }
 
+    private LandingPage findLandingPage(Long pageId, Long tenantId) {
+        return landingPageRepository.findByIdAndTenant_Id(pageId, tenantId)
+                .orElseThrow(() -> new LandingPageNotFoundException(pageId));
+    }
+
+    private Product findProduct(Long productId, Long tenantId) {
+        return productRepository.findByIdAndTenant_Id(productId, tenantId)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
+    }
+
     private Tenant getAuthenticatedTenant() {
         User authenticatedUser = authenticatedUserProvider.getAuthenticatedUser();
 
-        if(authenticatedUser.getTenant() == null) {
-            throw new AccessDeniedException("o usuário autenticado não possui Tenant.");
+        if (authenticatedUser.getTenant() == null) {
+            throw new AccessDeniedException(
+                    "O usuário autenticado não possui tenant."
+            );
         }
+
         return authenticatedUser.getTenant();
-    }
-
-    @Transactional
-    public boolean associateProduct(
-        Long pageId,
-        Long productId
-    ) {
-        Tenant tenant = getAuthenticatedTenant();
-
-        LandingPage landingPage = findLandingPage(
-            pageId,
-            tenant.getId()
-        );
-
-        Product product = findProduct(
-            productId,
-            tenant.getId()
-        );
-
-        boolean added = landingPage.addProduct(product);
-
-        if (!added) {
-            return false;
-        }
-
-        landingPageRepository.saveAndFlush(landingPage);
-
-        auditLogService.register(
-            "LANDING_PAGE_PRODUCT_ASSOCIATE",
-            "LandingPageProduct",
-            pageId + ":" + productId
-        );
-
-        return true;
-    }
-
-    @Transactional
-    public boolean disassociateProduct(
-        Long pageId,
-        Long productId
-    ) {
-        Tenant tenant = getAuthenticatedTenant();
-
-        LandingPage landingPage = findLandingPage(
-            pageId,
-            tenant.getId()
-        );
-
-        Product product = findProduct(
-            productId,
-            tenant.getId()
-        );
-
-        boolean removed = landingPage.removeProduct(product);
-
-        if (!removed) {
-            return false;
-        }
-
-        landingPageRepository.saveAndFlush(landingPage);
-
-        auditLogService.register(
-            "LANDING_PAGE_PRODUCT_DISASSOCIATE",
-            "LandingPageProduct",
-            pageId + ":" + productId
-        );
-
-        return true;
-    }
-
-    private LandingPage findLandingPage(
-        Long pageId,
-        Long tenantId
-    ) {
-        return landingPageRepository
-            .findByIdAndTenant_Id(
-                pageId,
-                tenantId
-            )
-            .orElseThrow(() ->
-                new LandingPageNotFoundException(pageId)
-            );
-    }
-
-    private Product findProduct(
-        Long productId,
-        Long tenantId
-    ) {
-        return productRepository
-            .findByIdAndTenant_Id(
-                productId,
-                tenantId
-            )
-            .orElseThrow(() ->
-                new ProductNotFoundException(productId)
-            );
     }
 }

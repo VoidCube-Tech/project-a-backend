@@ -35,12 +35,8 @@ public class PromotionController {
     public ResponseEntity<PromotionResponseDTO> create(
             @Valid @RequestBody PromotionRequestDTO request
     ) {
-        PromotionResponseDTO created =
-                promotionService.create(request);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(created);
+        PromotionResponseDTO response = promotionService.create(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
@@ -52,12 +48,8 @@ public class PromotionController {
             )
             Pageable pageable
     ) {
-        Page<PromotionResponseDTO> promotions =
-                promotionService.findAll(pageable);
-
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(promotions);
+        Page<PromotionResponseDTO> response = promotionService.findAll(pageable);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PutMapping("/{id}")
@@ -65,63 +57,37 @@ public class PromotionController {
             @PathVariable Long id,
             @Valid @RequestBody PromotionRequestDTO request
     ) {
-        PromotionResponseDTO updated =
-                promotionService.update(id, request);
-
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(updated);
+        PromotionResponseDTO response = promotionService.update(id, request);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
-            @PathVariable Long id
-    ) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         promotionService.delete(id);
-
-        return ResponseEntity
-                .status(HttpStatus.NO_CONTENT)
-                .build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    @PostMapping(
-            "/{promotionId}/products/{productId}"
-    )
+    @PostMapping("/{promotionId}/products/{productId}")
     public ResponseEntity<Void> associateProduct(
             @PathVariable Long promotionId,
             @PathVariable Long productId
     ) {
         boolean associated =
-                promotionService.associateProduct(
-                        promotionId,
-                        productId
-                );
+                promotionService.associateProduct(promotionId, productId);
 
-        if (!associated) {
-            return ResponseEntity
-                    .status(HttpStatus.NO_CONTENT)
-                    .build();
-        }
+        HttpStatus status = associated
+                ? HttpStatus.CREATED
+                : HttpStatus.NO_CONTENT;
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .build();
+        return ResponseEntity.status(status).build();
     }
 
-    @DeleteMapping(
-            "/{promotionId}/products/{productId}"
-    )
+    @DeleteMapping("/{promotionId}/products/{productId}")
     public ResponseEntity<Void> disassociateProduct(
             @PathVariable Long promotionId,
             @PathVariable Long productId
     ) {
-        promotionService.disassociateProduct(
-                promotionId,
-                productId
-        );
-
-        return ResponseEntity
-                .status(HttpStatus.NO_CONTENT)
-                .build();
+        promotionService.disassociateProduct(promotionId, productId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

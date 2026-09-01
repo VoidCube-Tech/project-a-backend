@@ -1,20 +1,8 @@
 package com.voidcube.tech.projectA.product.service;
 
-import com.voidcube.tech.projectA.audit.service.AuditLogService;
-import com.voidcube.tech.projectA.product.dto.response.ProductImageResponseDTO;
-import com.voidcube.tech.projectA.shared.exception.ProductImageNotFoundException;
-import com.voidcube.tech.projectA.shared.exception.ProductNotFoundException;
-import com.voidcube.tech.projectA.product.model.Product;
-import com.voidcube.tech.projectA.product.model.ProductImage;
-import com.voidcube.tech.projectA.product.repository.ProductImageRepository;
-import com.voidcube.tech.projectA.product.repository.ProductRepository;
-import com.voidcube.tech.projectA.shared.exception.ImageStorageException;
-import com.voidcube.tech.projectA.shared.security.AuthenticatedUserProvider;
-import com.voidcube.tech.projectA.shared.storage.ImageStorageService;
-import com.voidcube.tech.projectA.tenant.model.Tenant;
-import com.voidcube.tech.projectA.user.model.User;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,12 +10,26 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Optional;
+import com.voidcube.tech.projectA.audit.service.AuditLogService;
+import com.voidcube.tech.projectA.product.dto.response.ProductImageResponseDTO;
+import com.voidcube.tech.projectA.product.model.Product;
+import com.voidcube.tech.projectA.product.model.ProductImage;
+import com.voidcube.tech.projectA.product.repository.ProductImageRepository;
+import com.voidcube.tech.projectA.product.repository.ProductRepository;
+import com.voidcube.tech.projectA.shared.exception.ImageStorageException;
+import com.voidcube.tech.projectA.shared.exception.ProductImageNotFoundException;
+import com.voidcube.tech.projectA.shared.exception.ProductNotFoundException;
+import com.voidcube.tech.projectA.shared.security.AuthenticatedUserProvider;
+import com.voidcube.tech.projectA.shared.storage.ImageStorageService;
+import com.voidcube.tech.projectA.tenant.model.Tenant;
+import com.voidcube.tech.projectA.user.model.User;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ProductImageService {
 
     private final ProductRepository productRepository;
@@ -43,38 +45,26 @@ public class ProductImageService {
             boolean requestedAsMain
     ) {
         Tenant tenant = getAuthenticatedTenant();
+        Product product = findProduct(productId, tenant.getId());
 
-        Product product = findProduct(
-                productId,
-                tenant.getId()
-        );
-
-        String storedPath =
-                imageStorageService.save(file);
-
+        String storedPath = imageStorageService.save(file);
         registerFileCleanupOnRollback(storedPath);
 
         boolean hasMainImage =
-                productImageRepository
-                        .countMainByProductId(productId) > 0;
+                productImageRepository.countMainByProductId(productId) > 0;
 
-        boolean shouldBeMain =
-                requestedAsMain || !hasMainImage;
+        boolean shouldBeMain = requestedAsMain || !hasMainImage;
 
         if (shouldBeMain) {
-            productImageRepository
-                    .clearMainImage(productId);
+            productImageRepository.clearMainImage(productId);
         }
 
         ProductImage image = new ProductImage();
-
         image.setImageUrl(storedPath);
         image.setMain(shouldBeMain);
         image.setProduct(product);
 
-        ProductImage savedImage =
-                productImageRepository
-                        .saveAndFlush(image);
+        ProductImage savedImage = productImageRepository.saveAndFlush(image);
 
         auditLogService.register(
                 "PRODUCT_IMAGE_UPLOAD",
@@ -86,52 +76,33 @@ public class ProductImageService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductImageResponseDTO> findAll(
-            Long productId
-    ) {
-        Tenant tenant = getAuthenticatedTenant();
+    public List<ProductImageResponseDTO> findAll(Long productId) {
+        Long tenantId = getAuthenticatedTenant().getId();
 
-        findProduct(
-                productId,
-                tenant.getId()
-        );
+        findProduct(productId, tenantId);
 
-        return productImageRepository
-                .findAllByProductId(productId)
+        return productImageRepository.findAllByProductId(productId)
                 .stream()
                 .map(ProductImageResponseDTO::from)
                 .toList();
     }
 
     @Transactional
-    public ProductImageResponseDTO setMain(
-            Long productId,
-            Long imageId
-    ) {
-        Tenant tenant = getAuthenticatedTenant();
+    public ProductImageResponseDTO setMain(Long productId, Long imageId) {
+        Long tenantId = getAuthenticatedTenant().getId();
 
-        findProduct(
-                productId,
-                tenant.getId()
-        );
+        findProduct(productId, tenantId);
 
-        ProductImage image = findImage(
-                imageId,
-                productId
-        );
+        ProductImage image = findImage(imageId, productId);
 
         if (image.isMain()) {
             return ProductImageResponseDTO.from(image);
         }
 
-        productImageRepository
-                .clearMainImage(productId);
-
+        productImageRepository.clearMainImage(productId);
         image.setMain(true);
 
-        ProductImage savedImage =
-                productImageRepository
-                        .saveAndFlush(image);
+        ProductImage savedImage = productImageRepository.saveAndFlush(image);
 
         auditLogService.register(
                 "PRODUCT_IMAGE_SET_MAIN",
@@ -143,27 +114,14 @@ public class ProductImageService {
     }
 
     @Transactional
-    public void delete(
-            Long productId,
-            Long imageId
-    ) {
-        Tenant tenant = getAuthenticatedTenant();
+    public void delete(Long productId, Long imageId) {
+        Long tenantId = getAuthenticatedTenant().getId();
 
-        findProduct(
-                productId,
-                tenant.getId()
-        );
+        findProduct(productId, tenantId);
 
-        ProductImage image = findImage(
-                imageId,
-                productId
-        );
-
-        boolean removedImageWasMain =
-                image.isMain();
-
-        String storedPath =
-                image.getImageUrl();
+        ProductImage image = findImage(imageId, productId);
+        boolean removedImageWasMain = image.isMain();
+        String storedPath = image.getImageUrl();
 
         productImageRepository.delete(image);
         productImageRepository.flush();
@@ -181,120 +139,77 @@ public class ProductImageService {
         registerFileDeletionAfterCommit(storedPath);
     }
 
-    private void promoteFirstRemainingImage(
-            Long productId
-    ) {
-        Optional<ProductImage> firstRemainingImage =
-                productImageRepository
-                        .findFirstByProduct_IdOrderByIdAsc(
-                                productId
-                        );
+    private void promoteFirstRemainingImage(Long productId) {
+        Optional<ProductImage> firstImage =
+                productImageRepository.findFirstByProduct_IdOrderByIdAsc(
+                        productId
+                );
 
-        if (firstRemainingImage.isEmpty()) {
+        if (firstImage.isEmpty()) {
             return;
         }
 
-        ProductImage newMainImage =
-                firstRemainingImage.get();
-
+        ProductImage newMainImage = firstImage.get();
         newMainImage.setMain(true);
-
-        productImageRepository
-                .saveAndFlush(newMainImage);
+        productImageRepository.saveAndFlush(newMainImage);
     }
 
-    private Product findProduct(
-            Long productId,
-            Long tenantId
-    ) {
-        return productRepository
-                .findByIdAndTenant_Id(
-                        productId,
-                        tenantId
-                )
-                .orElseThrow(() ->
-                        new ProductNotFoundException(productId)
-                );
+    private Product findProduct(Long productId, Long tenantId) {
+        return productRepository.findByIdAndTenant_Id(productId, tenantId)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
     }
 
-    private ProductImage findImage(
-            Long imageId,
-            Long productId
-    ) {
-        return productImageRepository
-                .findByIdAndProduct_Id(
-                        imageId,
-                        productId
-                )
+    private ProductImage findImage(Long imageId, Long productId) {
+        return productImageRepository.findByIdAndProduct_Id(imageId, productId)
                 .orElseThrow(() ->
-                        new ProductImageNotFoundException(
-                                imageId
-                        )
-                );
+                        new ProductImageNotFoundException(imageId));
     }
 
     private Tenant getAuthenticatedTenant() {
-        User authenticatedUser =
-                authenticatedUserProvider
-                        .getAuthenticatedUser();
+        User user = authenticatedUserProvider.getAuthenticatedUser();
 
-        if (authenticatedUser.getTenant() == null) {
+        if (user.getTenant() == null) {
             throw new AccessDeniedException(
-                    "O usuário autenticado não possui Tenant."
+                    "O usuário autenticado não possui tenant."
             );
         }
 
-        return authenticatedUser.getTenant();
+        return user.getTenant();
     }
 
-    private void registerFileCleanupOnRollback(
-            String storedPath
-    ) {
-        if (!TransactionSynchronizationManager
-                .isSynchronizationActive()) {
+    private void registerFileCleanupOnRollback(String storedPath) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             return;
         }
 
-        TransactionSynchronizationManager
-                .registerSynchronization(
-                        new TransactionSynchronization() {
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
 
-                            @Override
-                            public void afterCompletion(
-                                    int status
-                            ) {
-                                if (status
-                                        != STATUS_COMMITTED) {
-                                    safelyDeleteFile(
-                                            storedPath
-                                    );
-                                }
-                            }
+                    @Override
+                    public void afterCompletion(int status) {
+                        if (status != STATUS_COMMITTED) {
+                            safelyDeleteFile(storedPath);
                         }
-                );
+                    }
+                }
+        );
     }
 
-    private void registerFileDeletionAfterCommit(
-            String storedPath
-    ) {
-        if (!TransactionSynchronizationManager
-                .isSynchronizationActive()) {
-            imageStorageService.delete(storedPath);
+    private void registerFileDeletionAfterCommit(String storedPath) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            safelyDeleteFile(storedPath);
             return;
         }
 
-        TransactionSynchronizationManager
-                .registerSynchronization(
-                        new TransactionSynchronization() {
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
 
-                            @Override
-                            public void afterCommit() {
-                                safelyDeleteFile(
-                                        storedPath
-                                );
-                            }
-                        }
-                );
+                    @Override
+                    public void afterCommit() {
+                        safelyDeleteFile(storedPath);
+                    }
+                }
+        );
     }
 
     private void safelyDeleteFile(String storedPath) {

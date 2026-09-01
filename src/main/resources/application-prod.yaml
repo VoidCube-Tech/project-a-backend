@@ -19,7 +19,8 @@ app:
       directory: ${IMAGE_STORAGE_DIRECTORY}
 server:
   servlet:
-    cookie:
-      secure: true
-      http-only: true
-      same-site: ${SESSION_COOKIE_SAME_SITE;lax}
+    session:
+      cookie:
+        secure: true
+        http-only: true
+        same-site: ${SESSION_COOKIE_SAME_SITE:lax}

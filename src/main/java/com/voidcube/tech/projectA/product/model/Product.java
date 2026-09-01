@@ -37,23 +37,24 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.AccessLevel;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @Table(name = "product")
-@SQLDelete(sql= "UPDATE product SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLDelete(sql = "UPDATE product SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 public class Product {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(nullable = false)
     private String name;
 
@@ -61,7 +62,7 @@ public class Product {
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, name = "product_type")
+    @Column(name = "product_type", nullable = false)
     private ProductType productType;
 
     @JdbcTypeCode(SqlTypes.LONGVARCHAR)
@@ -80,19 +81,21 @@ public class Product {
 
     @BatchSize(size = 50)
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-
     @Setter(AccessLevel.NONE)
     private List<ProductImage> images = new ArrayList<>();
 
+    @BatchSize(size = 50)
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    
     @Setter(AccessLevel.NONE)
     private List<ProductVariation> variations = new ArrayList<>();
 
     @BatchSize(size = 50)
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "product_tag_association", joinColumns = @JoinColumn(name= "product_id"), inverseJoinColumns = @JoinColumn(name= "tag_id"))
-
+    @JoinTable(
+            name = "product_tag_association",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
     @Setter(AccessLevel.NONE)
     private Set<ProductTag> tags = new LinkedHashSet<>();
 
@@ -100,12 +103,10 @@ public class Product {
     @Setter(AccessLevel.NONE)
     private Set<LandingPage> landingPages = new LinkedHashSet<>();
 
-
     @BatchSize(size = 50)
-    @Setter(AccessLevel.NONE)
     @ManyToMany(mappedBy = "products", fetch = FetchType.LAZY)
+    @Setter(AccessLevel.NONE)
     private Set<Promotion> promotions = new HashSet<>();
-
 
     public void addVariation(ProductVariation variation) {
         variations.add(variation);
@@ -113,13 +114,21 @@ public class Product {
     }
 
     public void removeVariation(ProductVariation variation) {
-        boolean removed = variations.remove(variation);
-        
-
-        if(!removed) {
-            throw new IllegalArgumentException("A variação não pertence a este produto");
+        if (!variations.remove(variation)) {
+            throw new IllegalArgumentException(
+                    "A variação não pertence a este produto"
+            );
         }
+
         variation.setProduct(null);
+    }
+
+    public void replaceVariations(Collection<ProductVariation> newVariations) {
+        new ArrayList<>(variations).forEach(this::removeVariation);
+
+        if (newVariations != null) {
+            newVariations.forEach(this::addVariation);
+        }
     }
 
     public void addImage(ProductImage image) {
@@ -129,22 +138,25 @@ public class Product {
 
     public void removeImage(ProductImage image) {
         boolean removedMainImage = image.isMain();
-        boolean removed = images.remove(image);
 
-        if(!removed) {
-            throw new IllegalArgumentException("A imagem não pertence a este produto");
+        if (!images.remove(image)) {
+            throw new IllegalArgumentException(
+                    "A imagem não pertence a este produto"
+            );
         }
 
         image.setProduct(null);
 
-        if(removedMainImage && !images.isEmpty()) {
+        if (removedMainImage && !images.isEmpty()) {
             images.getFirst().setMain(true);
         }
     }
 
     public void defineMainImage(ProductImage mainImage) {
-        if(!images.contains(mainImage)) {
-            throw new IllegalArgumentException("A imagem não pertence a este produto");
+        if (!images.contains(mainImage)) {
+            throw new IllegalArgumentException(
+                    "A imagem não pertence a este produto"
+            );
         }
 
         images.forEach(image -> image.setMain(image == mainImage));
@@ -155,103 +167,90 @@ public class Product {
     }
 
     public void removeTag(ProductTag tag) {
-        boolean removed = tags.remove(tag);
-
-        if(!removed) {
-            throw new IllegalArgumentException("A tag não está associada a este produto.");
+        if (!tags.remove(tag)) {
+            throw new IllegalArgumentException(
+                    "A tag não está associada a este produto."
+            );
         }
     }
 
     public void replaceTags(Collection<ProductTag> newTags) {
         tags.clear();
 
-        if(newTags != null) {
+        if (newTags != null) {
             tags.addAll(newTags);
         }
     }
 
-    public void replaceVariations(Collection<ProductVariation> newVariations) {
-        new ArrayList<>(variations).forEach(this::removeVariation);
-
-        if(newVariations != null) {
-            newVariations.forEach(this::addVariation);
-        }
-    }
-
-    public void markAsDeleted() {
-        if(deletedAt == null) {
-            deletedAt = LocalDateTime.now();
-        }
-    }
-
-    public boolean addLandingPageAssociation(
-        LandingPage landingPage
-) {
+    public boolean addLandingPageAssociation(LandingPage landingPage) {
         Objects.requireNonNull(
-            landingPage,
-            "A landing page não pode ser nula"
-    );
+                landingPage,
+                "A landing page não pode ser nula"
+        );
 
         boolean added = landingPages.add(landingPage);
 
         if (added) {
-        landingPage.getProducts().add(this);
-    }
+            landingPage.getProducts().add(this);
+        }
 
         return added;
-}
+    }
 
-    public boolean removeLandingPageAssociation(
-        LandingPage landingPage
-) {
+    public boolean removeLandingPageAssociation(LandingPage landingPage) {
         Objects.requireNonNull(
-            landingPage,
-            "A landing page não pode ser nula"
-    );
+                landingPage,
+                "A landing page não pode ser nula"
+        );
 
         boolean removed = landingPages.remove(landingPage);
 
         if (removed) {
             landingPage.getProducts().remove(this);
+        }
+
+        return removed;
     }
 
-    return removed;
-}
+    public void markAsDeleted() {
+        if (deletedAt == null) {
+            deletedAt = LocalDateTime.now();
+        }
+    }
 
     public boolean isAvailable() {
         if (deletedAt != null || productType == null) {
             return false;
-    }
+        }
 
         if (productType == ProductType.DIGITAL) {
             return true;
-    }
+        }
 
         return productType == ProductType.PHYSICAL
-            && stockQuantity != null
-            && stockQuantity > 0;
-}
+                && stockQuantity != null
+                && stockQuantity > 0;
+    }
 
-@Override
+    @Override
     public boolean equals(Object other) {
         if (this == other) {
             return true;
-    }
+        }
 
         if (!(other instanceof Product product)) {
             return false;
-    }
+        }
 
-        return getId() != null
-            && getId().equals(product.getId());
-}
+        return id != null && id.equals(product.getId());
+    }
 
     @Override
     public int hashCode() {
         return Product.class.hashCode();
-}
+    }
 
-  @PrePersist
+    @PrePersist
     @PreUpdate
     protected void validateProduct() {
         validateStock();
@@ -260,8 +259,7 @@ public class Product {
     }
 
     private void validateStock() {
-        if (productType == ProductType.PHYSICAL
-                && stockQuantity == null) {
+        if (productType == ProductType.PHYSICAL && stockQuantity == null) {
             throw new IllegalStateException(
                     "Produto físico precisa possuir quantidade em estoque."
             );
@@ -276,9 +274,7 @@ public class Product {
 
     private void validatePrice() {
         if (price != null && price.signum() < 0) {
-            throw new IllegalStateException(
-                    "O preço não pode ser negativo."
-            );
+            throw new IllegalStateException("O preço não pode ser negativo.");
         }
     }
 
@@ -288,7 +284,7 @@ public class Product {
         }
 
         long mainImageCount = images.stream()
-                .filter(image -> image.isMain())
+                .filter(ProductImage::isMain)
                 .count();
 
         if (mainImageCount > 1) {

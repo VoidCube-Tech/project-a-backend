@@ -1,8 +1,7 @@
 package com.voidcube.tech.projectA.product.controller;
 
-import com.voidcube.tech.projectA.product.dto.response.ProductImageResponseDTO;
-import com.voidcube.tech.projectA.product.service.ProductImageService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +17,14 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import com.voidcube.tech.projectA.product.dto.response.ProductImageResponseDTO;
+import com.voidcube.tech.projectA.product.service.ProductImageService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/products/{productId}/images")
 @RequiredArgsConstructor
+@RequestMapping("/api/v1/products/{productId}/images")
 @PreAuthorize("hasRole('ADMIN')")
 public class ProductImageController {
 
@@ -31,45 +33,34 @@ public class ProductImageController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductImageResponseDTO> uploadImage(
             @PathVariable Long productId,
-
-            @RequestPart("file")
-            MultipartFile file,
-
-            @RequestParam(
-                    name = "isMain",
-                    defaultValue = "false"
-            )
-            boolean isMain
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(name = "isMain", defaultValue = "false") boolean isMain
     ) {
         ProductImageResponseDTO response =
-                productImageService.upload(
-                        productId,
-                        file,
-                        isMain
-                );
+                productImageService.upload(productId, file, isMain);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductImageResponseDTO>>
-            listImages(
-                    @PathVariable Long productId
-            ) {
-        List<ProductImageResponseDTO> response = productImageService.findAll(productId);
+    public ResponseEntity<List<ProductImageResponseDTO>> listImages(
+            @PathVariable Long productId
+    ) {
+        List<ProductImageResponseDTO> response =
+                productImageService.findAll(productId);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PatchMapping("/{imageId}/main")
-    public ResponseEntity<ProductImageResponseDTO>
-            setMainImage(
-                    @PathVariable Long productId,
-                    @PathVariable Long imageId
-            ) {
-        ProductImageResponseDTO response = productImageService.setMain(productId, imageId);
-        
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ProductImageResponseDTO> setMainImage(
+            @PathVariable Long productId,
+            @PathVariable Long imageId
+    ) {
+        ProductImageResponseDTO response =
+                productImageService.setMain(productId, imageId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @DeleteMapping("/{imageId}")
@@ -77,11 +68,7 @@ public class ProductImageController {
             @PathVariable Long productId,
             @PathVariable Long imageId
     ) {
-        productImageService.delete(
-                productId,
-                imageId
-        );
-
-        return ResponseEntity.noContent().build();
+        productImageService.delete(productId, imageId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

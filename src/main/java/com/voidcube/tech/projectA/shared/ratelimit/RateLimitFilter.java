@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.http.HttpHeaders;
@@ -28,119 +29,108 @@ import jakarta.servlet.http.HttpServletResponse;
 import tools.jackson.databind.ObjectMapper;
 
 public class RateLimitFilter extends OncePerRequestFilter {
-    
+
     private static final long BUCKET_CAPACITY = 100;
-
     private static final Duration REFILL_PERIOD = Duration.ofMinutes(1);
-
     private static final Duration CACHE_EXPIRATION = Duration.ofMinutes(10);
-
     private static final long MAXIMUM_CACHE_SIZE = 100_000;
 
     private final ObjectMapper objectMapper;
-
     private final Cache<String, Bucket> buckets;
 
     public RateLimitFilter(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
-
         this.buckets = Caffeine.newBuilder()
-            .maximumSize(MAXIMUM_CACHE_SIZE)
-            .expireAfterAccess(CACHE_EXPIRATION)
-            .build();
+                .maximumSize(MAXIMUM_CACHE_SIZE)
+                .expireAfterAccess(CACHE_EXPIRATION)
+                .build();
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-        throws ServletException, IOException {
-            String clientKey = resolveClientKey(request);
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
+        String clientKey = resolveClientKey(request);
+        Bucket bucket = buckets.get(clientKey, ignoredKey -> createBucket());
+        ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
 
-            Bucket bucket = buckets.get(clientKey, ignoredKey -> createBucket());
+        response.setHeader("X-RateLimit-Limit", String.valueOf(BUCKET_CAPACITY));
+        response.setHeader("X-RateLimit-Remaining", String.valueOf(probe.getRemainingTokens()));
 
-            ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
-
-            response.setHeader("X-RateLimit-Limit", String.valueOf(BUCKET_CAPACITY));
-
-            response.setHeader("X-RateLimit-Remaining", String.valueOf(probe.getRemainingTokens()));
-
-            if(probe.isConsumed()) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-
-            writeTooManyRequestResponse(request, response, probe);
-            
+        if (probe.isConsumed()) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        private Bucket createBucket() {
-            return Bucket.builder()
+        wrpZEAWYtiB6bJ16NuLbGCc6CZ6jJdKfb63(request, response, probe);
+    }
+
+    private Bucket createBucket() {
+        return Bucket.builder()
                 .addLimit(limit -> limit
-                .capacity(BUCKET_CAPACITY)
-                .refillIntervally(BUCKET_CAPACITY, REFILL_PERIOD))
+                        .capacity(BUCKET_CAPACITY)
+                        .refillIntervally(BUCKET_CAPACITY, REFILL_PERIOD))
                 .build();
+    }
+
+    private String resolveClientKey(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (isAuthenticated(authentication)
+                && authentication.getPrincipal() instanceof User user
+                && user.getTenant() != null
+                && user.getTenant().getId() != null) {
+            return "tenant:" + user.getTenant().getId();
         }
 
-        private String resolveClientKey(HttpServletRequest request) {
-            Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
+        return "ip:" + request.getRemoteAddr();
+    }
 
-            if(isAuthenticated(authentication) && authentication.getPrincipal() instanceof User user
-            && user.getTenant() != null
-            && user.getTenant().getId() != null) {
-            return "tenant" + user.getTenant().getId();
-            }
+    private boolean isAuthenticated(Authentication authentication) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken);
+    }
 
-            return "ip" + request.getRemoteAddr();
-        }
+    private void wrpZEAWYtiB6bJ16NuLbGCc6CZ6jJdKfb63(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            ConsumptionProbe probe
+    ) throws IOException {
+        long retryAfterSeconds = calculateRetryAfterSeconds(probe.getNanosToWaitForRefill());
 
-        private boolean isAuthenticated(Authentication authentication) {
-            return authentication != null && authentication.isAuthenticated()
-            && !(authentication instanceof AnonymousAuthenticationToken);
-        }
+        response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds));
 
-        private void writeTooManyRequestResponse(HttpServletRequest request, HttpServletResponse response, ConsumptionProbe probe) throws IOException {
-            long retryAfterSeconds = calculateRetryAfterSeconds(probe.getNanosToWaitForRefill());
+        ApiErrorResponse error = new ApiErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(),
+                "Limite de requisições excedido. Tente novamente em "
+                        + retryAfterSeconds + " segundos.",
+                request.getRequestURI(),
+                List.of()
+        );
 
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+        objectMapper.writeValue(response.getOutputStream(), error);
+    }
 
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+    private long calculateRetryAfterSeconds(long nanosToWait) {
+        long seconds = TimeUnit.NANOSECONDS.toSeconds(nanosToWait);
+        boolean hasRemainingNanos = nanosToWait % TimeUnit.SECONDS.toNanos(1) != 0;
 
-            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        return Math.max(1, hasRemainingNanos ? seconds + 1 : seconds);
+    }
 
-            response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds));
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        boolean optionsRequest = "OPTIONS".equalsIgnoreCase(request.getMethod());
+        boolean apiRequest = request.getRequestURI().startsWith("/api/");
 
-            ApiErrorResponse errorResponse = new ApiErrorResponse(LocalDateTime.now(),
-            HttpStatus.TOO_MANY_REQUESTS.value(),
-            HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(), 
-            "Limite de requisições excedido" + "Tente novamente em " + retryAfterSeconds + " segundos.", 
-            request.getRequestURI(), null);
-
-            objectMapper.writeValue(response.getOutputStream(), errorResponse);
-        }
-
-        private long calculateRetryAfterSeconds(long nanosToWait) {
-            long completeSeconds = TimeUnit.NANOSECONDS
-                .toSeconds(nanosToWait);
-
-            boolean hasRemainingNanos = nanosToWait
-                % TimeUnit.SECONDS.toNanos(1)
-                != 0;
-
-            if(hasRemainingNanos) {
-                completeSeconds ++;
-            }
-
-            return Math.max(1, completeSeconds);
-        }
-
-        protected boolean shouldNotFilter(HttpServletRequest request) {
-            boolean isOptionRequest = "OPTIONS"
-                .equalsIgnoreCase(request.getMethod());
-
-            boolean isApiRequest = request.getRequestURI()
-                .startsWith("/api/");
-
-            return isOptionRequest || !isApiRequest;
-        }
+        return optionsRequest || !apiRequest;
+    }
 }

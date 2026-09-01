@@ -6,47 +6,47 @@ import com.voidcube.tech.projectA.audit.model.AuditLog;
 import com.voidcube.tech.projectA.user.model.Role;
 
 public record AuditLogResponse(
-    Long id,
-    String action,
-    String entityName,
-    String entityId,
-    Long performedByUserId,
-    Role performerdByRole,
-    Long tenantId,
-    AuditScope scope,
-    LocalDateTime createdAt
+        Long id,
+        String action,
+        String entityName,
+        String entityId,
+        Long performedByUserId,
+        Role performedByRole,
+        Long tenantId,
+        AuditScope scope,
+        LocalDateTime createdAt
+) {
 
-) 
-{
     public static AuditLogResponse from(AuditLog auditLog) {
         Role actorRole = auditLog.getPerformedByUser().getRole();
-        Long affectedTenantId = auditLog.getTenant() != null
-        ? auditLog.getTenant().getId()
-        : null;
+
+        Long affectedTenantId = auditLog.getTenant() == null
+                ? null
+                : auditLog.getTenant().getId();
 
         return new AuditLogResponse(
-            auditLog.getId(),
-            auditLog.getAction(),
-            auditLog.getEntityName(),
-            auditLog.getEntityId(),
-            auditLog.getPerformedByUser().getId(),
-            actorRole,
-            affectedTenantId,
-            determineScope(actorRole, affectedTenantId),
-            auditLog.getCreatedAt()
+                auditLog.getId(),
+                auditLog.getAction(),
+                auditLog.getEntityName(),
+                auditLog.getEntityId(),
+                auditLog.getPerformedByUser().getId(),
+                actorRole,
+                affectedTenantId,
+                determineScope(actorRole, affectedTenantId),
+                auditLog.getCreatedAt()
         );
     }
-    
+
     private static AuditScope determineScope(
-        Role actorRole,
-        Long affectedTenantId
+            Role actorRole,
+            Long affectedTenantId
     ) {
-        if (actorRole == Role.ROLE_SUPER_ADMIN) {
-            return affectedTenantId == null
-            ? AuditScope.GLOBAL
-            : AuditScope.THIRD_PARTY_TENANT;
+        if (actorRole != Role.ROLE_SUPER_ADMIN) {
+            return AuditScope.OWN_TENANT;
         }
-        return AuditScope.OWN_TENANT;
+
+        return affectedTenantId == null
+                ? AuditScope.GLOBAL
+                : AuditScope.THIRD_PARTY_TENANT;
     }
-    
 }

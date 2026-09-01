@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.voidcube.tech.projectA.plan.model.Plan;
 import com.voidcube.tech.projectA.plan.repository.PlanRepository;
@@ -22,15 +23,14 @@ import com.voidcube.tech.projectA.user.model.VerificationToken;
 import com.voidcube.tech.projectA.user.repository.UserRepository;
 import com.voidcube.tech.projectA.user.repository.VerificationTokenRepository;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-    
+
     private final UserRepository userRepository;
-    private final TenantRepository tenantRepositoy;
+    private final TenantRepository tenantRepository;
     private final VerificationTokenRepository verificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
@@ -39,17 +39,18 @@ public class AuthService {
 
     @Transactional
     public void register(RegisterRequestDTO request) {
-        if(userRepository.findByEmail(request.email()).isPresent()) {
+        if (userRepository.findByEmail(request.email()).isPresent()) {
             throw new EmailAlreadyExistsException("Este e-mail já está cadastrado");
         }
 
         Plan basicPlan = planRepository.findByName("Basic")
-            .orElseThrow(()-> new IllegalStateException("O plano padrão Basic não está cadastrado"));
+                .orElseThrow(() ->
+                        new IllegalStateException("O plano padrão Basic não está cadastrado"));
 
         Tenant tenant = new Tenant();
         tenant.setCompanyName(request.companyName());
         tenant.setPlan(basicPlan);
-        tenantRepositoy.save(tenant);
+        tenantRepository.save(tenant);
 
         User user = new User();
         user.setEmail(request.email());
@@ -64,27 +65,35 @@ public class AuthService {
         verificationToken.setUser(user);
         verificationTokenRepository.save(verificationToken);
 
-        String verificationLink = frontendProperties.url() + "/verificar?token=" + verificationToken.getToken();
+        String verificationLink = frontendProperties.url()
+                + "/verificar?token="
+                + verificationToken.getToken();
+
         emailService.sendVerificationEmail(user.getEmail(), verificationLink);
     }
+
     @Transactional
     public void verifyEmail(String token) {
         VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
-            .orElseThrow(()-> new InvalidTokenException("Token inválido ou expirado"));
+                .orElseThrow(() -> new InvalidTokenException("Token inválido ou expirado"));
 
-            User user = verificationToken.getUser();
-            
-            if(user.getEmailVerifiedAt() != null) {
-                return;
-            }
+        User user = verificationToken.getUser();
 
-            if(verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-                throw new TokenExpiredException("Token Expirado. Solicite um novo e-mail de verificação");
-            }
-            
-            user.setEmailVerifiedAt(LocalDateTime.now());
-            userRepository.save(user);
+        if (user.getEmailVerifiedAt() != null) {
+            verificationTokenRepository.delete(verificationToken);
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if (verificationToken.getExpiresAt().isBefore(now)) {
+            throw new TokenExpiredException(
+                    "Token expirado. Solicite um novo e-mail de verificação"
+            );
+        }
+
+        user.setEmailVerifiedAt(now);
+        userRepository.save(user);
+        verificationTokenRepository.delete(verificationToken);
     }
-
-
 }

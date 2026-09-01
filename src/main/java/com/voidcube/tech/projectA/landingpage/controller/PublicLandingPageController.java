@@ -20,26 +20,33 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/public/landing-pages")
 public class PublicLandingPageController {
-    
+
     private final PublicLandingPageService publicLandingPageService;
 
     @GetMapping("/{domainUrl}")
-    public ResponseEntity<PublicLandingPageResponseDTO> findByDomainUrl(@PathVariable("domainUrl")String domainUrl) {
-        PublicLandingPageResponseDTO response = publicLandingPageService.findByDomainUrl(domainUrl);
+    public ResponseEntity<PublicLandingPageResponseDTO> findByDomainUrl(
+            @PathVariable String domainUrl
+    ) {
+        PublicLandingPageResponseDTO response =
+                publicLandingPageService.findByDomainUrl(domainUrl);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @GetMapping("/{domainUrl}/whatsapp")
     public ResponseEntity<Void> redirectToWhatsapp(
-        @PathVariable String domainUrl,
-
-        @RequestParam(required = false)
-        @Positive(message = "{validation.analytics.product-id.positive}")
-        Long productId
+            @PathVariable String domainUrl,
+            @RequestParam(required = false)
+            @Positive(message = "{validation.analytics.product-id.positive}")
+            Long productId
     ) {
-        URI redirectUri = publicLandingPageService.buildWhatsappRedirect(domainUrl, productId);
+        URI redirect = publicLandingPageService.buildWhatsappRedirect(
+                domainUrl,
+                productId
+        );
 
-        return ResponseEntity.status(HttpStatus.FOUND).location(redirectUri).build();
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(redirect)
+                .build();
     }
 }

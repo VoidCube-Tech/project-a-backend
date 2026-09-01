@@ -23,12 +23,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Setter
 @Getter
+@Setter
 @NoArgsConstructor
 @Table(name = "landing_page")
 public class LandingPage {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -36,10 +36,10 @@ public class LandingPage {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, name = "domain_url", unique = true)
+    @Column(name = "domain_url", nullable = false, unique = true)
     private String domainUrl;
 
-    @Column(nullable = false, name = "whatsapp_number", length = 20)
+    @Column(name = "whatsapp_number", length = 20)
     private String whatsappNumber;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -48,18 +48,17 @@ public class LandingPage {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "product_landing_page",
-        joinColumns = @JoinColumn(name = "landing_page_id"),
-        inverseJoinColumns = @JoinColumn(name = "product_id")
+            name = "product_landing_page",
+            joinColumns = @JoinColumn(name = "landing_page_id"),
+            inverseJoinColumns = @JoinColumn(name = "product_id")
     )
     @Setter(AccessLevel.NONE)
     private Set<Product> products = new LinkedHashSet<>();
 
-
     public boolean addProduct(Product product) {
         boolean added = products.add(product);
 
-        if(added) {
+        if (added) {
             product.addLandingPageAssociation(this);
         }
 
@@ -69,9 +68,10 @@ public class LandingPage {
     public boolean removeProduct(Product product) {
         boolean removed = products.remove(product);
 
-        if(removed) {
+        if (removed) {
             product.removeLandingPageAssociation(this);
         }
+
         return removed;
     }
 }

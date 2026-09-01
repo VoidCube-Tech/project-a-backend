@@ -1,5 +1,5 @@
 package com.voidcube.tech.projectA.shared.storage;
-
+import com.voidcube.tech.projectA.shared.exception.InvalidImageException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.core.io.Resource;
@@ -106,10 +106,7 @@ void deveRedimensionarImagemMuitoGrande()
                         "isso nao e uma imagem".getBytes()
                 );
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> service.save(file)
-        );
+        assertThrows(InvalidImageException.class, () -> service.save(file));
     }
 
     @Test
@@ -132,12 +129,8 @@ void deveRedimensionarImagemMuitoGrande()
                         oversizedContent
                 );
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> service.save(file)
-        );
+        assertThrows(InvalidImageException.class, () -> service.save(file));
     }
-
     private MockMultipartFile createPngFile(
             String filename,
             int width,

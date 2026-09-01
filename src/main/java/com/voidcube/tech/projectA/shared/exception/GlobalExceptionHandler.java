@@ -15,8 +15,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
-import com.voidcube.tech.projectA.inventory.exception.InventoryConsistencyException;
+
 import com.voidcube.tech.projectA.export.exception.InvalidExportFormatException;
+import com.voidcube.tech.projectA.inventory.exception.InventoryConsistencyException;
 import com.voidcube.tech.projectA.promotion.exception.CouponCodeAlreadyExistsException;
 import com.voidcube.tech.projectA.promotion.exception.InvalidPromotionException;
 import com.voidcube.tech.projectA.promotion.exception.PromotionNotFoundException;
@@ -36,11 +37,7 @@ public class GlobalExceptionHandler {
             BadCredentialsException exception,
             HttpServletRequest request
     ) {
-        return buildResponse(
-                HttpStatus.UNAUTHORIZED,
-                "Credenciais inválidas.",
-                request
-        );
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Credenciais inválidas.", request);
     }
 
     @ExceptionHandler(DisabledException.class)
@@ -60,11 +57,7 @@ public class GlobalExceptionHandler {
             AccessDeniedException exception,
             HttpServletRequest request
     ) {
-        return buildResponse(
-                HttpStatus.FORBIDDEN,
-                exception.getMessage(),
-                request
-        );
+        return buildResponse(HttpStatus.FORBIDDEN, exception.getMessage(), request);
     }
 
     @ExceptionHandler({
@@ -78,11 +71,7 @@ public class GlobalExceptionHandler {
             RuntimeException exception,
             HttpServletRequest request
     ) {
-        return buildResponse(
-                HttpStatus.CONFLICT,
-                exception.getMessage(),
-                request
-        );
+        return buildResponse(HttpStatus.CONFLICT, exception.getMessage(), request);
     }
 
     @ExceptionHandler({
@@ -99,11 +88,7 @@ public class GlobalExceptionHandler {
             RuntimeException exception,
             HttpServletRequest request
     ) {
-        return buildResponse(
-                HttpStatus.BAD_REQUEST,
-                exception.getMessage(),
-                request
-        );
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
     }
 
     @ExceptionHandler({
@@ -119,19 +104,14 @@ public class GlobalExceptionHandler {
             RuntimeException exception,
             HttpServletRequest request
     ) {
-        return buildResponse(
-                HttpStatus.NOT_FOUND,
-                exception.getMessage(),
-                request
-        );
+        return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request);
     }
 
     @ExceptionHandler(WhatsappNotConfiguredException.class)
-    public ResponseEntity<ApiErrorResponse>
-            handleWhatsappNotConfigured(
-                    WhatsappNotConfiguredException exception,
-                    HttpServletRequest request
-            ) {
+    public ResponseEntity<ApiErrorResponse> handleWhatsappNotConfigured(
+            WhatsappNotConfiguredException exception,
+            HttpServletRequest request
+    ) {
         return buildResponse(
                 HttpStatus.UNPROCESSABLE_CONTENT,
                 exception.getMessage(),
@@ -140,16 +120,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InventoryConsistencyException.class)
-        public ResponseEntity<ApiErrorResponse> handleInventoryConsistency(
-        InventoryConsistencyException exception,
-        HttpServletRequest request)       
-        {
+    public ResponseEntity<ApiErrorResponse> handleInventoryConsistency(
+            InventoryConsistencyException exception,
+            HttpServletRequest request
+    ) {
         return buildResponse(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            exception.getMessage(),
-            request
-    );
-}
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                exception.getMessage(),
+                request
+        );
+    }
 
     @ExceptionHandler(ImageStorageException.class)
     public ResponseEntity<ApiErrorResponse> handleImageStorage(
@@ -182,18 +162,16 @@ public class GlobalExceptionHandler {
     ) {
         return buildResponse(
                 HttpStatus.SERVICE_UNAVAILABLE,
-                "O serviço de analytics está temporariamente "
-                        + "sobrecarregado. Tente novamente.",
+                "O serviço de analytics está temporariamente sobrecarregado. Tente novamente.",
                 request
         );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiErrorResponse>
-            handleRequestBodyValidation(
-                    MethodArgumentNotValidException exception,
-                    HttpServletRequest request
-            ) {
+    public ResponseEntity<ApiErrorResponse> handleRequestBodyValidation(
+            MethodArgumentNotValidException exception,
+            HttpServletRequest request
+    ) {
         List<FieldValidationErrorResponse> fieldErrors = exception
                 .getBindingResult()
                 .getFieldErrors()
@@ -221,14 +199,12 @@ public class GlobalExceptionHandler {
         List<FieldValidationErrorResponse> fieldErrors = exception
                 .getParameterValidationResults()
                 .stream()
-                .flatMap(result -> result
-                        .getResolvableErrors()
+                .flatMap(result -> result.getResolvableErrors()
                         .stream()
                         .map(error -> new FieldValidationErrorResponse(
                                 result.getMethodParameter().getParameterName(),
                                 error.getDefaultMessage()
-                        ))
-                )
+                        )))
                 .distinct()
                 .toList();
 
@@ -241,11 +217,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ApiErrorResponse>
-            handleConstraintViolation(
-                    ConstraintViolationException exception,
-                    HttpServletRequest request
-            ) {
+    public ResponseEntity<ApiErrorResponse> handleConstraintViolation(
+            ConstraintViolationException exception,
+            HttpServletRequest request
+    ) {
         List<FieldValidationErrorResponse> fieldErrors = exception
                 .getConstraintViolations()
                 .stream()
@@ -271,8 +246,7 @@ public class GlobalExceptionHandler {
     ) {
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
-                "JSON inválido. Verifique os valores e os tipos "
-                        + "dos campos informados.",
+                "JSON inválido. Verifique os valores e os tipos dos campos informados.",
                 request
         );
     }

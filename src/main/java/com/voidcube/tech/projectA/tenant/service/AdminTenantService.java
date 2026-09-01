@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class AdminTenantService {
-    
+
     private final TenantRepository tenantRepository;
     private final PlanRepository planRepository;
     private final AuditLogService auditLogService;
@@ -27,27 +27,30 @@ public class AdminTenantService {
     @Transactional
     public List<TenantResponse> findAll() {
         List<TenantResponse> tenants = tenantRepository.findAll()
-            .stream()
-            .map(TenantResponse::from)
-            .toList();
+                .stream()
+                .map(TenantResponse::from)
+                .toList();
 
-    auditLogService.register("LIST_ALL", "Tenant", "ALL");
-
+        auditLogService.register("LIST_ALL", "Tenant", "ALL");
         return tenants;
     }
 
     @Transactional
     public void updatePlan(Long tenantId, Long planId) {
         Tenant tenant = tenantRepository.findById(tenantId)
-            .orElseThrow(() -> new TenantNotFoundException(tenantId));
+                .orElseThrow(() -> new TenantNotFoundException(tenantId));
 
         Plan plan = planRepository.findById(planId)
-            .orElseThrow(() -> new PlanNotFoundException(planId));
+                .orElseThrow(() -> new PlanNotFoundException(planId));
 
-            tenant.setPlan(plan);
+        tenant.setPlan(plan);
+        tenantRepository.save(tenant);
 
-            tenantRepository.save(tenant);
-
-            auditLogService.register("TENANT_PLAN_CHANGE", "Tenant", tenantId.toString(), tenantId);
+        auditLogService.register(
+                "TENANT_PLAN_CHANGE",
+                "Tenant",
+                tenantId.toString(),
+                tenantId
+        );
     }
 }

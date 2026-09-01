@@ -1,5 +1,11 @@
 package com.voidcube.tech.projectA.audit.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.voidcube.tech.projectA.audit.dto.AuditLogResponse;
 import com.voidcube.tech.projectA.audit.model.AuditLog;
 import com.voidcube.tech.projectA.audit.repository.AuditLogRepository;
@@ -8,13 +14,9 @@ import com.voidcube.tech.projectA.tenant.model.Tenant;
 import com.voidcube.tech.projectA.tenant.repository.TenantRepository;
 import com.voidcube.tech.projectA.user.model.Role;
 import com.voidcube.tech.projectA.user.model.User;
+
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,9 +24,7 @@ public class AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
     private final TenantRepository tenantRepository;
-
-    private final AuthenticatedUserProvider
-            authenticatedUserProvider;
+    private final AuthenticatedUserProvider authenticatedUserProvider;
 
     @Transactional
     public void register(
@@ -32,16 +32,14 @@ public class AuditLogService {
             String entityName,
             String entityId
     ) {
-        User authenticatedUser =
-                authenticatedUserProvider
-                        .getAuthenticatedUser();
+        User user = authenticatedUserProvider.getAuthenticatedUser();
 
         saveAuditLog(
                 action,
                 entityName,
                 entityId,
-                authenticatedUser,
-                authenticatedUser.getTenant()
+                user,
+                user.getTenant()
         );
     }
 
@@ -52,60 +50,38 @@ public class AuditLogService {
             String entityId,
             Long affectedTenantId
     ) {
-        User authenticatedUser =
-                authenticatedUserProvider
-                        .getAuthenticatedUser();
-
         if (affectedTenantId == null) {
             throw new IllegalArgumentException(
                     "O ID do tenant afetado não pode ser nulo"
             );
         }
 
-        Tenant affectedTenant = tenantRepository
-                .findById(affectedTenantId)
+        User user = authenticatedUserProvider.getAuthenticatedUser();
+
+        Tenant affectedTenant = tenantRepository.findById(affectedTenantId)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "Tenant afetado não encontrado: "
-                                + affectedTenantId
+                        "Tenant afetado não encontrado: " + affectedTenantId
                 ));
 
-        validateTenantAccess(
-                authenticatedUser,
-                affectedTenant
-        );
-
-        saveAuditLog(
-                action,
-                entityName,
-                entityId,
-                authenticatedUser,
-                affectedTenant
-        );
+        validateTenantAccess(user, affectedTenant);
+        saveAuditLog(action, entityName, entityId, user, affectedTenant);
     }
 
     @Transactional(readOnly = true)
-    public Page<AuditLogResponse> findAll(
-            Pageable pageable
-    ) {
-        return auditLogRepository
-                .findAll(pageable)
+    public Page<AuditLogResponse> findAll(Pageable pageable) {
+        return auditLogRepository.findAll(pageable)
                 .map(AuditLogResponse::from);
     }
 
-    private void validateTenantAccess(
-            User authenticatedUser,
-            Tenant affectedTenant
-    ) {
-        if (authenticatedUser.getRole()
-                == Role.ROLE_SUPER_ADMIN) {
+    private void validateTenantAccess(User user, Tenant affectedTenant) {
+        if (user.getRole() == Role.ROLE_SUPER_ADMIN) {
             return;
         }
 
-        Tenant userTenant = authenticatedUser.getTenant();
+        Tenant userTenant = user.getTenant();
 
         if (userTenant == null
-                || !userTenant.getId()
-                    .equals(affectedTenant.getId())) {
+                || !userTenant.getId().equals(affectedTenant.getId())) {
             throw new AccessDeniedException(
                     "Admin não pode registrar ação de outro tenant"
             );
@@ -116,7 +92,7 @@ public class AuditLogService {
             String action,
             String entityName,
             String entityId,
-            User authenticatedUser,
+            User user,
             Tenant affectedTenant
     ) {
         validateText(action, "action");
@@ -124,20 +100,16 @@ public class AuditLogService {
         validateText(entityId, "entityId");
 
         AuditLog auditLog = new AuditLog();
-
         auditLog.setAction(action);
         auditLog.setEntityName(entityName);
         auditLog.setEntityId(entityId);
-        auditLog.setPerformedByUser(authenticatedUser);
+        auditLog.setPerformedByUser(user);
         auditLog.setTenant(affectedTenant);
 
         auditLogRepository.save(auditLog);
     }
 
-    private void validateText(
-            String value,
-            String fieldName
-    ) {
+    private void validateText(String value, String fieldName) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(
                     fieldName + " não pode estar vazio"
